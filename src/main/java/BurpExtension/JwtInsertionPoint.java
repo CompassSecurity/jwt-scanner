@@ -31,7 +31,6 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
         for (int i=0; i <= baseHttpRequest.headers().toArray().length - 1; i++){
             if (baseHttpRequest.headers().get(i).name().equals("Authorization")){
                 baseValue = baseHttpRequest.headers().get(i).value().toString();
-                api.logging().logToOutput("Base header " + baseHttpRequest.headers().get(i));
                 headerPosition = i;
             }
         }
@@ -50,7 +49,6 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
     public HttpRequest buildHttpRequestWithPayload(ByteArray payload){
 
         HttpHeader newHeader = HttpHeader.httpHeader("Authorization",payload.toString());
-        api.logging().logToOutput("New Header: " + newHeader.toString());
         return requestResponse.withUpdatedHeader(newHeader);
     }
 

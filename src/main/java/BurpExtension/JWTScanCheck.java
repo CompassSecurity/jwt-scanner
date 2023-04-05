@@ -8,13 +8,9 @@ import burp.api.montoya.scanner.ConsolidationAction;
 import burp.api.montoya.scanner.ScanCheck;
 import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.scanner.audit.issues.AuditIssue;
-import burp.api.montoya.scanner.audit.issues.AuditIssueConfidence;
-import burp.api.montoya.scanner.audit.issues.AuditIssueSeverity;
 import static burp.api.montoya.core.ByteArray.byteArray;
-import static burp.api.montoya.scanner.AuditResult.auditResult;
 import static burp.api.montoya.scanner.ConsolidationAction.KEEP_BOTH;
 import static burp.api.montoya.scanner.ConsolidationAction.KEEP_EXISTING;
-import static burp.api.montoya.scanner.audit.issues.AuditIssue.auditIssue;
 
 class JWTScanCheck implements ScanCheck
 {
@@ -38,10 +34,10 @@ class JWTScanCheck implements ScanCheck
                 if (origJwt.startsWith("Bearer ")){
                     origJwt = origJwt.substring("Bearer ".length());
                 }
-                // jwtModifier.decode(origJwt);
                 // Validate if the origJwt  is already expired somehow burp returns class not found: io.jseonwebtokens.Jwts
                 if (jwtModifier.isJwtNotExpired(origJwt)) {
                     api.logging().logToOutput("using JWT: " + origJwt);
+                    api.logging().logToOutput("modified jwt: " + jwtModifier.algNone(origJwt));
                 } else {
                     api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
                     api.logging().logToOutput("JWT expired, please choose a valid one!");
@@ -51,24 +47,11 @@ class JWTScanCheck implements ScanCheck
             }
         }
 
-        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + origJwt));
-        api.logging().logToOutput("Request with payload: \n" + checkRequest);
+        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.algNone(origJwt)));
         HttpRequestResponse checkRequestResponse = api.http().sendRequest(checkRequest);
 
-        if (checkRequestResponse.response().statusCode() != 200) {
-            api.logging().logToOutput("Request status code: " + checkRequestResponse.response().statusCode());
-        };
         if (checkRequestResponse.response().statusCode() == 200){
-            api.siteMap().add(auditIssue("Wrong JWT attack",
-                    "Some JWT issue was found: ",
-                    "Validate the JWT correctly!",
-                    baseRequestResponse.request().url(),
-                    AuditIssueSeverity.HIGH,
-                    AuditIssueConfidence.CERTAIN,
-                    null,
-                    null,
-                    AuditIssueSeverity.HIGH,
-                    checkRequestResponse));
+            api.siteMap().add(JwtAuditIssues.getAlgNone(baseRequestResponse.request().url(), checkRequestResponse));
         }
 
         return null;
