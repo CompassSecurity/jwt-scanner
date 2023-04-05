@@ -29,7 +29,29 @@ class JWTScanCheck implements ScanCheck
     public AuditResult activeAudit(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint)
     {
         HttpRequest req = baseRequestResponse.request();
-        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + "TEST-JWT"));
+        JwtModifier jwtModifier = new JwtModifier(api);
+        String origJwt = "ORIGINAL-JWT";
+
+        for (int i=0; i <= req.headers().toArray().length; i++){
+            if (req.headers().get(i).name().equals("Authorization")){
+                origJwt = req.headers().get(i).value().toString();
+                if (origJwt.startsWith("Bearer ")){
+                    origJwt = origJwt.substring("Bearer ".length());
+                }
+                // jwtModifier.decode(origJwt);
+                // Validate if the origJwt  is already expired somehow burp returns class not found: io.jseonwebtokens.Jwts
+                if (jwtModifier.isJwtNotExpired(origJwt)) {
+                    api.logging().logToOutput("using JWT: " + origJwt);
+                } else {
+                    api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
+                    api.logging().logToOutput("JWT expired, please choose a valid one!");
+                    return null;
+                }
+                break;
+            }
+        }
+
+        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + origJwt));
         api.logging().logToOutput("Request with payload: \n" + checkRequest);
         HttpRequestResponse checkRequestResponse = api.http().sendRequest(checkRequest);
 
