@@ -34,10 +34,10 @@ class JWTScanCheck implements ScanCheck
                 if (origJwt.startsWith("Bearer ")){
                     origJwt = origJwt.substring("Bearer ".length());
                 }
-                // Validate if the origJwt  is already expired somehow burp returns class not found: io.jseonwebtokens.Jwts
+                // Validate if the origJwt is still valid
                 if (jwtModifier.isJwtNotExpired(origJwt)) {
-                    api.logging().logToOutput("using JWT: " + origJwt);
-                    api.logging().logToOutput("modified jwt: " + jwtModifier.algNone(origJwt));
+                    api.logging().logToOutput("using JWT:\n" + origJwt);
+                    api.logging().logToOutput("self sig :\n" + jwtModifier.emptyPassword(origJwt));
                 } else {
                     api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
                     api.logging().logToOutput("JWT expired, please choose a valid one!");
@@ -47,7 +47,7 @@ class JWTScanCheck implements ScanCheck
             }
         }
 
-        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.algNone(origJwt)));
+        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.emptyPassword(origJwt)));
         HttpRequestResponse checkRequestResponse = api.http().sendRequest(checkRequest);
 
         if (checkRequestResponse.response().statusCode() == 200){

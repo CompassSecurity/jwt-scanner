@@ -3,8 +3,12 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import burp.api.montoya.MontoyaApi;
 
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
 
@@ -42,6 +46,10 @@ public class JwtModifier {
         return new String(decodedBytes, StandardCharsets.UTF_8);
     }
 
+    private static String encodeBase64Url(String input) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(input.getBytes(StandardCharsets.UTF_8));
+    }
+
     public boolean isJwtNotExpired(String jwt) {
         String[] jwtParts = jwt.split("\\.");
         String payload = jwtParts[1];
@@ -67,21 +75,70 @@ public class JwtModifier {
         JSONObject claim = new JSONObject(decodeBase64Url(jwtParts[1]));
 
 
-        return createJwtFromJson(header, claim);
+        return createJwtFromJson(header, claim, dummyKey);
     }
 
-    public String algNone(String jwt){
+    public String algNone(String jwt) {
         String[] jwtParts = jwt.split("\\.");
         JSONObject header = new JSONObject(decodeBase64Url(jwtParts[0]));
-        JSONObject claim = new JSONObject(decodeBase64Url(jwtParts[1]));
 
-        api.logging().logToOutput("Alg before: " + header);
         header.put("alg", "none");
-        return createJwtFromJson(header, claim);
+        return encodeBase64Url(header.toString()) + '.' + jwtParts[1] + '.';
     }
 
-    private String createJwtFromJson(JSONObject headerJson, JSONObject claimsJson){
-        api.logging().logToOutput("Alg after: " + headerJson);
+    public String emptyPassword(String jwt){
+        String[] jwtParts = jwt.split("\\.");
+        // Change this to empty password.
+        String key = dummyKey.toString();
+        return createJwtFromString(jwtParts[0],jwtParts[1],key);
+    }
+
+    private String createJwtFromString(String header, String claim, String key) {
+        /* JWS Signing Input (RFC)
+        The input to the digital signature or MAC computation.  Its value
+        is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' ||
+        BASE64URL(JWS Payload)). */
+        // Maybe add a valid check if it is already encoded.
+        if (!header.startsWith("ey")) {
+            String encodedHeader = encodeBase64Url(header);
+            String encodedClaim = encodeBase64Url(claim);
+        }
+
+        String combined = header + "." + claim;
+        String signature = createHmacSha256Signature(combined, key);
+        return combined + "." + signature;
+    }
+
+    private static String createHmacSha256Signature(String input, String secret) {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(secretKeySpec);
+
+            byte[] hmacBytes = mac.doFinal(input.getBytes());
+            return hmacBytes.toString();
+
+        } catch (Exception e) {
+            return input;
+        }
+
+    }
+
+    public String calcHmacSha256(byte[] secretKey, byte[] message) {
+        byte[] hmacSha256 = null;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey, "HmacSHA256");
+            mac.init(secretKeySpec);
+            hmacSha256 = mac.doFinal(message);
+        } catch (Exception e) {
+            api.logging().logToError("Exception during " + "HmacSHA256" + ": " + e.getMessage());
+        }
+        return hmacSha256.toString();
+    }
+
+
+    private String createJwtFromJson(JSONObject headerJson, JSONObject claimsJson, SecretKey key){
 
         Map<String, Object> headerMap = headerJson.toMap();
         Map<String, Object> payloadMap = claimsJson.toMap();
@@ -90,7 +147,7 @@ public class JwtModifier {
             String newJwt = Jwts.builder()
                     .setHeader(headerMap)
                     .setClaims(payloadMap)
-                    .signWith(dummyKey, SignatureAlgorithm.HS256)
+                    .signWith(key, SignatureAlgorithm.HS256)
                     .compact();
             return newJwt;
         } catch(JwtException ex) {
