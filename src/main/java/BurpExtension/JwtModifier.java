@@ -21,24 +21,6 @@ public class JwtModifier {
     JwtModifier (MontoyaApi api){
         this.api = api;
     }
-    public void decode(String jwt){
-        String[] jwtParts = jwt.split("\\.");
-
-        // Decode JWT header
-        String header = jwtParts[0];
-        String decodedHeader = decodeBase64Url(header);
-        api.logging().logToOutput("Decoded header: " + decodedHeader);
-
-        // Decode JWT payload
-        String payload = jwtParts[1];
-        String decodedClaim = decodeBase64Url(payload);
-        api.logging().logToOutput("Decoded claim: " + decodedClaim);
-
-        // Decode JWT signature (this step is optional as the signature is not human-readable)
-        String signature = jwtParts[2];
-        String decodedSignature = decodeBase64Url(signature);
-        api.logging().logToOutput("Decoded signature: " + decodedSignature);
-    }
 
     private static String decodeBase64Url(String base64Url) {
         Base64.Decoder decoder = Base64.getUrlDecoder();
@@ -88,8 +70,6 @@ public class JwtModifier {
 
     public String emptyPassword(String jwt){
         String[] jwtParts = jwt.split("\\.");
-        // TODO: Change this to empty password.
-        String key = "\n";
         String combined = jwtParts[0] + '.' + jwtParts[1];
         return combined + '.' + createHmacSha256EmptySignature(combined);
     }

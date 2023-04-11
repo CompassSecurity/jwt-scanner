@@ -6,16 +6,18 @@ public class EmptySecret implements SecretKey {
 
     @Override
     public String getAlgorithm() {
-        return null;
+        return "HMAC";
     }
 
     @Override
     public String getFormat() {
-        return null;
+        return "RAW";
     }
 
     @Override
     public byte[] getEncoded() {
+
+        // return empty key data
         return new byte[0];
     }
 }
