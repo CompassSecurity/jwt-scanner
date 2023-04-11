@@ -47,7 +47,11 @@ public class JwtModifier {
     }
 
     private static String encodeBase64Url(String input) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(input.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(input.getBytes());
+    }
+
+    private static String encodeBase64UrlByte(byte[] input) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(input);
     }
 
     public boolean isJwtNotExpired(String jwt) {
@@ -71,11 +75,7 @@ public class JwtModifier {
 
     public String wrongSignature(String jwt){
         String[] jwtParts = jwt.split("\\.");
-        JSONObject header = new JSONObject(decodeBase64Url(jwtParts[0]));
-        JSONObject claim = new JSONObject(decodeBase64Url(jwtParts[1]));
-
-
-        return createJwtFromJson(header, claim, dummyKey);
+        return createJwtFromString(jwtParts[0], jwtParts[1], dummyKey.toString());
     }
 
     public String algNone(String jwt) {
@@ -88,8 +88,8 @@ public class JwtModifier {
 
     public String emptyPassword(String jwt){
         String[] jwtParts = jwt.split("\\.");
-        // Change this to empty password.
-        String key = dummyKey.toString();
+        // TODO: Change this to empty password.
+        String key = "thisismysupersecretkeywhichshouldonlybeontheauthenticationserver";
         return createJwtFromString(jwtParts[0],jwtParts[1],key);
     }
 
@@ -98,10 +98,14 @@ public class JwtModifier {
         The input to the digital signature or MAC computation.  Its value
         is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' ||
         BASE64URL(JWS Payload)). */
-        // Maybe add a valid check if it is already encoded.
+
+        // Check if header and claim are already encoded.
         if (!header.startsWith("ey")) {
-            String encodedHeader = encodeBase64Url(header);
+            header = encodeBase64Url(header);
             String encodedClaim = encodeBase64Url(claim);
+        }
+        if (!claim.startsWith("ey")) {
+            claim = encodeBase64Url(claim);
         }
 
         String combined = header + "." + claim;
@@ -109,50 +113,19 @@ public class JwtModifier {
         return combined + "." + signature;
     }
 
-    private static String createHmacSha256Signature(String input, String secret) {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    private String createHmacSha256Signature(String input, String secret) {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(secretKeySpec);
 
-            byte[] hmacBytes = mac.doFinal(input.getBytes());
-            return hmacBytes.toString();
+            byte[] hmacBytes = mac.doFinal(input.getBytes(StandardCharsets.UTF_8));
+            return encodeBase64UrlByte(hmacBytes);
 
         } catch (Exception e) {
+            api.logging().logToError(e.getMessage());
             return input;
         }
 
-    }
-
-    public String calcHmacSha256(byte[] secretKey, byte[] message) {
-        byte[] hmacSha256 = null;
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey, "HmacSHA256");
-            mac.init(secretKeySpec);
-            hmacSha256 = mac.doFinal(message);
-        } catch (Exception e) {
-            api.logging().logToError("Exception during " + "HmacSHA256" + ": " + e.getMessage());
-        }
-        return hmacSha256.toString();
-    }
-
-
-    private String createJwtFromJson(JSONObject headerJson, JSONObject claimsJson, SecretKey key){
-
-        Map<String, Object> headerMap = headerJson.toMap();
-        Map<String, Object> payloadMap = claimsJson.toMap();
-
-        try {
-            String newJwt = Jwts.builder()
-                    .setHeader(headerMap)
-                    .setClaims(payloadMap)
-                    .signWith(key, SignatureAlgorithm.HS256)
-                    .compact();
-            return newJwt;
-        } catch(JwtException ex) {
-            api.logging().logToError("Some error while building the JWT: " + ex);
-            return null;
-        }
     }
 }
