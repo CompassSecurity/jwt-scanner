@@ -89,8 +89,9 @@ public class JwtModifier {
     public String emptyPassword(String jwt){
         String[] jwtParts = jwt.split("\\.");
         // TODO: Change this to empty password.
-        String key = "thisismysupersecretkeywhichshouldonlybeontheauthenticationserver";
-        return createJwtFromString(jwtParts[0],jwtParts[1],key);
+        String key = "\n";
+        String combined = jwtParts[0] + '.' + jwtParts[1];
+        return combined + '.' + createHmacSha256EmptySignature(combined);
     }
 
     private String createJwtFromString(String header, String claim, String key) {
@@ -126,6 +127,20 @@ public class JwtModifier {
             api.logging().logToError(e.getMessage());
             return input;
         }
+    }
 
+    private String createHmacSha256EmptySignature(String input) {
+        EmptySecret emptySecret = new EmptySecret();
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(emptySecret);
+
+            byte[] hmacBytes = mac.doFinal(input.getBytes(StandardCharsets.UTF_8));
+            return encodeBase64UrlByte(hmacBytes);
+
+        } catch (Exception e) {
+            api.logging().logToError(e.getMessage());
+            return input;
+        }
     }
 }

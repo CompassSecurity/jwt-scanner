@@ -38,7 +38,7 @@ class JWTScanCheck implements ScanCheck
                 if (jwtModifier.isJwtNotExpired(origJwt)) {
                     api.logging().logToOutput("using JWT:\n" + origJwt);
                     api.logging().logToOutput("self sig :\n" + jwtModifier.wrongSignature(origJwt));
-                    api.logging().logToOutput("Emptty sig: \n" + jwtModifier.emptyPassword(origJwt));
+                    api.logging().logToOutput("Empty sig: \n" + jwtModifier.emptyPassword(origJwt));
                 } else {
                     api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
                     api.logging().logToOutput("JWT expired, please choose a valid one!");
