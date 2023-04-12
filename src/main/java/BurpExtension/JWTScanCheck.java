@@ -1,6 +1,10 @@
 package BurpExtension;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.collaborator.Collaborator;
+import burp.api.montoya.collaborator.CollaboratorClient;
+import burp.api.montoya.collaborator.CollaboratorPayload;
+import burp.api.montoya.collaborator.Interaction;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.scanner.AuditResult;
@@ -39,6 +43,7 @@ class JWTScanCheck implements ScanCheck
                     api.logging().logToOutput("using JWT:\n" + origJwt);
                     api.logging().logToOutput("self sig :\n" + jwtModifier.wrongSignature(origJwt));
                     api.logging().logToOutput("Empty sig: \n" + jwtModifier.emptyPassword(origJwt));
+                    api.logging().logToOutput("invalid ECDSA: \n" + jwtModifier.invalidEcdsa(origJwt));
                 } else {
                     api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
                     api.logging().logToOutput("JWT expired, please choose a valid one!");
@@ -48,8 +53,23 @@ class JWTScanCheck implements ScanCheck
             }
         }
 
-        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.emptyPassword(origJwt)));
+        /* collaborator test
+        Collaborator collaborator = api.collaborator();
+        CollaboratorClient collaboratorClient = collaborator.createClient();
+
+        CollaboratorPayload payload = collaboratorClient.generatePayload();
+        String payloadString = payload.toString();
+        api.logging().logToOutput("payloadstrin: " + payloadString);
+        */
+
+
+        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.JwksInjection(origJwt)));
         HttpRequestResponse checkRequestResponse = api.http().sendRequest(checkRequest);
+
+        /* Collaborator check
+        for (Interaction interaction : collaboratorClient.getAllInteractions()){
+            api.logging().logToOutput("Interaction id: " + interaction.id());
+        }*/
 
         if (checkRequestResponse.response().statusCode() == 200){
             api.siteMap().add(JwtAuditIssues.getAlgNone(baseRequestResponse.request().url(), checkRequestResponse));

