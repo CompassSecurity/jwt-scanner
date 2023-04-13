@@ -1,10 +1,6 @@
 package BurpExtension;
 
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.collaborator.Collaborator;
-import burp.api.montoya.collaborator.CollaboratorClient;
-import burp.api.montoya.collaborator.CollaboratorPayload;
-import burp.api.montoya.collaborator.Interaction;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.scanner.AuditResult;
@@ -44,6 +40,7 @@ class JWTScanCheck implements ScanCheck
                     api.logging().logToOutput("self sig :\n" + jwtModifier.wrongSignature(origJwt));
                     api.logging().logToOutput("Empty sig: \n" + jwtModifier.emptyPassword(origJwt));
                     api.logging().logToOutput("invalid ECDSA: \n" + jwtModifier.invalidEcdsa(origJwt));
+                    api.logging().logToOutput("JWKS injecition: \n" + jwtModifier.JwksInjection(origJwt));
                 } else {
                     api.logging().raiseErrorEvent("JWT expired, please choose a valid one!");
                     api.logging().logToOutput("JWT expired, please choose a valid one!");
@@ -63,7 +60,7 @@ class JWTScanCheck implements ScanCheck
         */
 
 
-        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray("Bearer " + jwtModifier.JwksInjection(origJwt)));
+        HttpRequest checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.JwksInjection(origJwt)));
         HttpRequestResponse checkRequestResponse = api.http().sendRequest(checkRequest);
 
         /* Collaborator check

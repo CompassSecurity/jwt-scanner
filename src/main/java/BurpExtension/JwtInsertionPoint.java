@@ -48,7 +48,7 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
     @Override
     public HttpRequest buildHttpRequestWithPayload(ByteArray payload){
 
-        HttpHeader newHeader = HttpHeader.httpHeader("Authorization",payload.toString());
+        HttpHeader newHeader = HttpHeader.httpHeader("Authorization", "Bearer " + payload.toString());
         return requestResponse.withUpdatedHeader(newHeader);
     }
 
