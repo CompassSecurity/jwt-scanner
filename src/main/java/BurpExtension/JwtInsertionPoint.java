@@ -3,6 +3,7 @@ package BurpExtension;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.core.Range;
+import burp.api.montoya.http.HttpService;
 import burp.api.montoya.http.message.HttpHeader;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.params.HttpParameter;
@@ -12,6 +13,8 @@ import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.utilities.Utilities;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static burp.api.montoya.http.message.params.HttpParameter.parameter;
 
@@ -21,6 +24,9 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
     private String baseValue;
     private final Utilities utilities;
 
+    private String prefix;
+    private String suffix;
+
     private int headerPosition;
 
     JwtInsertionPoint(MontoyaApi api, HttpRequest baseHttpRequest){
@@ -28,11 +34,18 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
         this.api = api;
         this.utilities = api.utilities();
 
-        for (int i=0; i <= baseHttpRequest.headers().toArray().length - 1; i++){
-            if (baseHttpRequest.headers().get(i).name().equals("Authorization")){
-                baseValue = baseHttpRequest.headers().get(i).value().toString();
-                headerPosition = i;
-            }
+        String regex = "(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]*)";
+        Pattern pattern = Pattern.compile(regex);
+        String input = baseHttpRequest.toString();
+        Matcher matcher = pattern.matcher(input);
+
+        if (matcher.find()) {
+            int startIndex = matcher.start();
+            int endIndex = matcher.end();
+            this.prefix = input.substring(0, startIndex);
+            this.suffix = input.substring(endIndex,input.length());
+        } else {
+            api.logging().logToError("No JWT found.");
         }
     }
     @Override
@@ -47,9 +60,9 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
 
     @Override
     public HttpRequest buildHttpRequestWithPayload(ByteArray payload){
-
-        HttpHeader newHeader = HttpHeader.httpHeader("Authorization", "Bearer " + payload.toString());
-        return requestResponse.withUpdatedHeader(newHeader);
+        HttpRequest req = HttpRequest.httpRequest(this.prefix + payload.toString() + this.suffix);
+        HttpService service = this.requestResponse.httpService();
+        return req.withService(service);
     }
 
     @Override
