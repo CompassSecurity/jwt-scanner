@@ -8,6 +8,25 @@ import burp.api.montoya.scanner.audit.issues.AuditIssueSeverity;
 import static burp.api.montoya.scanner.audit.issues.AuditIssue.auditIssue;
 
 public abstract class JwtAuditIssues {
+
+    public static final AuditIssue withoutSignature(String url, HttpRequestResponse checkRequestResponse){
+        return auditIssue("JWT Signature not required",
+                "The server accepts JWTs that are not signed \n " +
+                        "An attacker can forge a JWT and take over any account and role in the application. " +
+                        "This can be used to elevate privileges for instance.",
+                "A standard library should be used to handle the JWT in order to prevent " +
+                        "implementation errors and vulnerabilities.\n" +
+                        "There, the signature verification must be enabled.",
+                // baseRequestResponse.request().url(),
+                url,
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                checkRequestResponse);
+    }
+
     public static final AuditIssue getAlgNone(String url, HttpRequestResponse checkRequestResponse){
          return auditIssue("Algorithm none JWT attack",
                 "The server accepts JWTs created with the \"none\" algorithm. \n " +
@@ -20,7 +39,7 @@ public abstract class JwtAuditIssues {
                 // baseRequestResponse.request().url(),
                 url,
                 AuditIssueSeverity.HIGH,
-                AuditIssueConfidence.CERTAIN,
+                AuditIssueConfidence.FIRM,
                 null,
                 null,
                 AuditIssueSeverity.HIGH,
@@ -37,10 +56,58 @@ public abstract class JwtAuditIssues {
                 // baseRequestResponse.request().url(),
                 url,
                 AuditIssueSeverity.HIGH,
-                AuditIssueConfidence.CERTAIN,
+                AuditIssueConfidence.FIRM,
                 null,
                 null,
                 AuditIssueSeverity.HIGH,
                 checkRequestResponse);
     }
+
+    public static final AuditIssue emptyPassword(String url, HttpRequestResponse checkRequestResponse){
+        return auditIssue("JWT signed with empty password",
+                "The signature of the JSON Web Tokens (JWT) is created with an empty password.\n" +
+                        "An attacker can forge a JWT with an empty password and take over any account and role in the application. " +
+                        "This can be used to elevate privileges for instance.",
+                "A standard library should be used to handle the JWT in order to prevent implementation errors and vulnerabilities.\n" +
+                        "No Empty secrets should be used to create signatures.\n"+
+                        "The signature verification must be enabled.",
+                // baseRequestResponse.request().url(),
+                url,
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                checkRequestResponse);
+    }
+    public static final AuditIssue invalidEcdsa(String url, HttpRequestResponse checkRequestResponse){
+        return auditIssue("JWT signed invalid ECDSA parameters",
+                "CVE-2022-21449 Vulnerability in the Oracle Java SE, Oracle GraalVM Enterprise Edition product of Oracle Java SE.\n" +
+                        "Easily exploitable vulnerability allows unauthenticated attacker with network access via multiple protocols to compromise Oracle Java SE," +
+                        " Oracle GraalVM Enterprise Edition. Successful attacks of this vulnerability can result in unauthorized creation, " +
+                        "deletion or modification access to critical data or all Oracle Java SE, Oracle GraalVM Enterprise Edition accessible data.",
+                "Install available patch and refer to vendor advisory: https://www.oracle.com/security-alerts/cpuapr2022.html",
+                // baseRequestResponse.request().url(),
+                url,
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                checkRequestResponse);
+    }
+    public static final AuditIssue jwksInjection(String url, HttpRequestResponse checkRequestResponse){
+        return auditIssue("JWT JWKs Injection",
+                "It is possible to include the used public key in the JWK value of the header. The Application takes the included public key to validate the signature",
+                "The JWK provided in the header should not be used to validate the signature.",
+                // baseRequestResponse.request().url(),
+                url,
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                checkRequestResponse);
+    }
+
 }
