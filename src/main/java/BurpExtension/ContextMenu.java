@@ -61,7 +61,6 @@ public class ContextMenu implements ContextMenuItemsProvider
                 JMenuItem retrieveSelectedRequestItem = new JMenuItem("Selected JWT");
                 int startindex = event.messageEditorRequestResponse().get().selectionOffsets().get().startIndexInclusive();
                 int endindex = event.messageEditorRequestResponse().get().selectionOffsets().get().endIndexExclusive();
-                api.logging().logToOutput("Startindex:\n" + startindex + "\n Endindex: \n" + endindex);
                 JWTScanCheck scanSelected = new JWTScanCheck(api);
                 JwtInsertionPoint insertionPointSelected = new JwtInsertionPoint(api,requestResponse.request(),startindex,endindex);
                 retrieveSelectedRequestItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
