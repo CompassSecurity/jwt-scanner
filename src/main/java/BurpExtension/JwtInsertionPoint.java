@@ -48,6 +48,16 @@ public class JwtInsertionPoint implements AuditInsertionPoint {
             api.logging().logToError("No JWT found.");
         }
     }
+
+    JwtInsertionPoint(MontoyaApi api, HttpRequest baseHttpRequest, int startIndex, int endIndex){
+        this.requestResponse = baseHttpRequest;
+        this.api = api;
+        this.utilities = api.utilities();
+        String input = baseHttpRequest.toString();
+
+        this.prefix = input.substring(0, startIndex);
+        this.suffix = input.substring(endIndex,input.length());
+    }
     @Override
     public String name() {
         return "JWT-Authorization-Header";
