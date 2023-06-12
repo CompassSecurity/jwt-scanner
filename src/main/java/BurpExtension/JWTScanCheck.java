@@ -9,6 +9,7 @@ import burp.api.montoya.scanner.ScanCheck;
 import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.scanner.audit.issues.AuditIssue;
 
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +25,9 @@ class JWTScanCheck implements ScanCheck
     {
         this.api = api;
     }
+
+    ArrayList<String> algoList = new ArrayList<>();
+
 
     @Override
     public AuditResult activeAudit(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint)
@@ -72,10 +76,15 @@ class JWTScanCheck implements ScanCheck
             api.siteMap().add(JwtAuditIssues.invalidSignature(baseRequestResponse.request().url(), checkRequestResponseSig));
         }
 
-        HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.algNone(origJwt)));
-        HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
-        if (checkRequestResponseNone.response().statusCode() == 200){
-            api.siteMap().add(JwtAuditIssues.getAlgNone(baseRequestResponse.request().url(), checkRequestResponseNone));
+        this.permute("none", "");
+
+        for(int i = 0; i< algoList.size(); i++) {
+            api.logging().logToOutput("check for " + algoList.get(i));
+            HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.algNone(origJwt, algoList.get(i))));
+            HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
+            if (checkRequestResponseNone.response().statusCode() == 200) {
+                api.siteMap().add(JwtAuditIssues.getAlgNone(baseRequestResponse.request().url(), checkRequestResponseNone));
+            }
         }
 
         HttpRequest checkRequestEmpty = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.emptyPassword(origJwt)));
@@ -114,5 +123,20 @@ class JWTScanCheck implements ScanCheck
     public ConsolidationAction consolidateIssues(AuditIssue newIssue, AuditIssue existingIssue)
     {
         return existingIssue.name().equals(newIssue.name()) ? KEEP_EXISTING : KEEP_BOTH;
+    }
+    private void permute(String ip, String op)
+    {
+        // base case
+        if(ip.length() == 0){
+            this.algoList.add(op);
+            return;
+        }
+        // pick lower and uppercase
+        String ch = ("" + ip.charAt(0)).toLowerCase();
+        String ch2 = ("" + ip.charAt(0)).toUpperCase();
+        ip = ip.substring(1, ip.length()) ;
+
+        permute(ip, op + ch);
+        permute(ip, op + ch2);
     }
 }
