@@ -2,7 +2,6 @@ package BurpExtension;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import burp.api.montoya.MontoyaApi;
-
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;

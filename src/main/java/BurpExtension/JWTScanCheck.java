@@ -55,15 +55,6 @@ class JWTScanCheck implements ScanCheck
             api.logging().logToError("No JWT found.");
         }
 
-        /* collaborator test
-        Collaborator collaborator = api.collaborator();
-        CollaboratorClient collaboratorClient = collaborator.createClient();
-
-        CollaboratorPayload payload = collaboratorClient.generatePayload();
-        String payloadString = payload.toString();
-        api.logging().logToOutput("payloadstrin: " + payloadString);
-        */
-
         HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.removeSignature(origJwt)));
         HttpRequestResponse checkRequestResponseNoSig = api.http().sendRequest(checkRequestNoSig);
         if (checkRequestResponseNoSig.response().statusCode() == 200){
@@ -79,7 +70,6 @@ class JWTScanCheck implements ScanCheck
         this.permute("none", "");
 
         for(int i = 0; i< algoList.size(); i++) {
-            api.logging().logToOutput("check for " + algoList.get(i));
             HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.algNone(origJwt, algoList.get(i))));
             HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
             if (checkRequestResponseNone.response().statusCode() == 200) {
@@ -104,11 +94,6 @@ class JWTScanCheck implements ScanCheck
         if (checkRequestResponseJwks.response().statusCode() == 200){
             api.siteMap().add(JwtAuditIssues.jwksInjection(baseRequestResponse.request().url(), checkRequestResponseJwks));
         }
-
-        /* Collaborator check
-        for (Interaction interaction : collaboratorClient.getAllInteractions()){
-            api.logging().logToOutput("Interaction id: " + interaction.id());
-        }*/
 
         return null;
     }

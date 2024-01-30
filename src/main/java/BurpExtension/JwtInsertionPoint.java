@@ -4,19 +4,12 @@ import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.core.Range;
 import burp.api.montoya.http.HttpService;
-import burp.api.montoya.http.message.HttpHeader;
-import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.http.message.params.HttpParameter;
-import burp.api.montoya.http.message.params.ParsedHttpParameter;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.utilities.Utilities;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static burp.api.montoya.http.message.params.HttpParameter.parameter;
 
 public class JwtInsertionPoint implements AuditInsertionPoint {
     private final MontoyaApi api;
