@@ -1,6 +1,10 @@
 package BurpExtension;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.collaborator.Collaborator;
+import burp.api.montoya.collaborator.CollaboratorClient;
+import burp.api.montoya.collaborator.CollaboratorPayload;
+import burp.api.montoya.collaborator.Interaction;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.scanner.AuditResult;
@@ -55,14 +59,14 @@ class JWTScanCheck implements ScanCheck
             api.logging().logToError("No JWT found.");
         }
 
-        /* collaborator test
+        /* collaborator test*/
         Collaborator collaborator = api.collaborator();
         CollaboratorClient collaboratorClient = collaborator.createClient();
 
         CollaboratorPayload payload = collaboratorClient.generatePayload();
         String payloadString = payload.toString();
         api.logging().logToOutput("payloadstrin: " + payloadString);
-        */
+
 
         HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.removeSignature(origJwt)));
         HttpRequestResponse checkRequestResponseNoSig = api.http().sendRequest(checkRequestNoSig);
@@ -105,10 +109,10 @@ class JWTScanCheck implements ScanCheck
             api.siteMap().add(JwtAuditIssues.jwksInjection(baseRequestResponse.request().url(), checkRequestResponseJwks));
         }
 
-        /* Collaborator check
+        // Collaborator check
         for (Interaction interaction : collaboratorClient.getAllInteractions()){
             api.logging().logToOutput("Interaction id: " + interaction.id());
-        }*/
+        }
 
         return null;
     }
