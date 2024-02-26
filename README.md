@@ -1,6 +1,6 @@
 # JWT-attacker - Burp Extension
 ## Description
-JWT Attacker is a Burp Suite extension for automated testing of Jason Web Token (JWT) implementations of web applications. 
+JWT Attacker is a Burp Suite extension for automated testing of JSON Web Token (JWT) implementations of web applications. 
 
 ### Checks
 - Signature presence
