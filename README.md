@@ -22,12 +22,12 @@ Run an active scan or manually select a request from to check:
 2. Select request that requires a authentication with a valid JWT and returns a HTTP 200 response
 > **_NOTE:_** First the extension will resend the selected request without modification and check if the JWT is still valid. If not a Error will be displayed in the Event Log
 
-### Automatically
+### Automatically detect JWT
 3. Right-click on the request you want to check.
 4. Extension -> JWT-attacker -> Autodetect JWT
 5. In case of a identified vulnerability a issue is generated
 
-### Manually
+### Manually select JWT
 3. Highlight the target JWT in request
 4. Right-click highlighted JWT request
 5. Extension -> JWT-attacker -> Selected JWT
@@ -37,3 +37,9 @@ Run an active scan or manually select a request from to check:
 1. Download the latest pre-built jar file from [releases](https://github.com/CompassSecurity/jwt-attacker/releases).
 2. Extender -> Tab Installed -> Add -> Extension Details -> Extension Type: *Java* -> Select file ...
 3. Select the downloaded jar
+
+## Build
+Using maven to build jar file with dependencies:
+```shell
+mvn package -f pom.xml
+```
