@@ -27,6 +27,8 @@ Run an active scan or manually select a request from to check:
 4. Extension -> JWT-attacker -> Autodetect JWT
 5. In case of a identified vulnerability a issue is generated
 
+Autodetect JWT from valid request:
+![img.png](Doc/autoselect.png)
 ### Manually select JWT
 3. Highlight the target JWT in request
 4. Right-click highlighted JWT request
@@ -38,6 +40,9 @@ Run an active scan or manually select a request from to check:
 2. Extender -> Tab Installed -> Add -> Extension Details -> Extension Type: *Java* -> Select file ...
 3. Select the downloaded jar
 
+Manually select JWT from valid request:
+
+![img_1.png](Doc/manualselect.png)
 ## Build
 Using maven to build jar file with dependencies:
 ```shell
