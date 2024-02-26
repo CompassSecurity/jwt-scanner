@@ -11,7 +11,6 @@ JWT Attacker is a Burp Suite extension for automated testing of Jason Web Token 
 - JWT JWK injection
 
 ## Features
-- Active Scanner
 - Select base request and autodetection of JWT
 - Manually select target JWT in source request
 
