@@ -1,6 +1,6 @@
-# JWT-attacker - Burp Extension
+# JWT-scanner - Burp Extension
 ## Description
-JWT Attacker is a Burp Suite extension for automated testing of Jason Web Token (JWT) implementations of web applications. 
+JWT Scanner is a Burp Suite extension for automated testing of Jason Web Token (JWT) implementations of web applications. 
 
 ### Checks
 - Signature presence
@@ -24,7 +24,7 @@ Run an active scan or manually select a request from to check:
 
 ### Automatically detect JWT
 3. Right-click on the request you want to check.
-4. Extension -> JWT-attacker -> Autodetect JWT
+4. Extension -> JWT-scanner -> Autodetect JWT
 5. In case of a identified vulnerability a issue is generated
 
 Autodetect JWT from valid request:
@@ -32,7 +32,7 @@ Autodetect JWT from valid request:
 ### Manually select JWT
 3. Highlight the target JWT in request
 4. Right-click highlighted JWT request
-5. Extension -> JWT-attacker -> Selected JWT
+5. Extension -> JWT-scanner -> Selected JWT
 6. In case of a identified vulnerability a issue is generated
 
 ## Installation
