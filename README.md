@@ -36,7 +36,7 @@ Autodetect JWT from valid request:
 6. In case of a identified vulnerability a issue is generated
 
 ## Installation
-1. Download the latest pre-built jar file from [releases](https://github.com/CompassSecurity/jwt-attacker/releases).
+1. Download the latest pre-built jar file from [releases](https://github.com/CompassSecurity/jwt-scanner/releases).
 2. Extender -> Tab Installed -> Add -> Extension Details -> Extension Type: *Java* -> Select file ...
 3. Select the downloaded jar
 
