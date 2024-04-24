@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static burp.api.montoya.scanner.AuditResult.auditResult;
 import static burp.api.montoya.core.ByteArray.byteArray;
 import static burp.api.montoya.scanner.ConsolidationAction.KEEP_BOTH;
 import static burp.api.montoya.scanner.ConsolidationAction.KEEP_EXISTING;
@@ -95,13 +96,13 @@ class JWTScanCheck implements ScanCheck
             api.siteMap().add(JwtAuditIssues.jwksInjection(baseRequestResponse.request().url(), checkRequestResponseJwks));
         }
 
-        return null;
+        return auditResult();
     }
 
     @Override
     public AuditResult passiveAudit(HttpRequestResponse baseRequestResponse)
     {
-        return null;
+        return auditResult();
     }
 
     @Override
