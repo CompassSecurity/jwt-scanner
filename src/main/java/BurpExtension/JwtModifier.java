@@ -5,7 +5,6 @@ import burp.api.montoya.MontoyaApi;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SignatureException;
@@ -51,8 +50,7 @@ public class JwtModifier {
         String header = jwtParts[0];
         String claims = jwtParts[1];
 
-        String concatenated = header + '.' + claims;
-        return concatenated;
+        return header + '.' + claims;
     }
 
     public String wrongSignature(String jwt){
@@ -99,8 +97,7 @@ public class JwtModifier {
 
             headerObject.put("jwk",jwk.toJSONObject());
             String header = base64UrlEncodeNoPadding(headerObject.toString());
-            final String newjwt = signJWTRSA(header, jwtParts[1], keyPair.getPrivate());
-            return newjwt;
+            return signJWTRSA(header, jwtParts[1], keyPair.getPrivate());
 
         } catch (Exception e) {
             api.logging().logToError(e.getMessage());
@@ -119,12 +116,11 @@ public class JwtModifier {
     private static String base64UrlEncodeNoPadding(byte[] input) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(input);
     }
-    private static KeyPair generateRS256KeyPair() throws NoSuchAlgorithmException, IOException {
+    private static KeyPair generateRS256KeyPair() throws NoSuchAlgorithmException {
 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        return keyPair;
+        return keyPairGenerator.generateKeyPair();
     }
 
     private static String signJWTRSA(String header, String payload, PrivateKey privateKey) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
@@ -149,7 +145,6 @@ public class JwtModifier {
         // Check if header and claim are already encoded.
         if (!header.startsWith("ey")) {
             header = encodeBase64Url(header);
-            String encodedClaim = encodeBase64Url(claim);
         }
         if (!claim.startsWith("ey")) {
             claim = encodeBase64Url(claim);
