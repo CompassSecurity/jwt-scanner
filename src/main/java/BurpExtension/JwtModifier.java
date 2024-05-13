@@ -1,5 +1,5 @@
 package BurpExtension;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import burp.api.montoya.MontoyaApi;
 import javax.crypto.Mac;
@@ -12,8 +12,8 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
 import com.nimbusds.jose.jwk.RSAKey;
+import org.json.JSONObject;
 
-import org.json.*;
 public class JwtModifier {
     private final MontoyaApi api;
     private final SecretKey dummyKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
