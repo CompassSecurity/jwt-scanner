@@ -1,6 +1,9 @@
 package BurpExtension;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.core.Marker;
+import burp.api.montoya.core.Range;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.scanner.AuditResult;
@@ -33,8 +36,21 @@ class JwtScanCheck implements ScanCheck
 
 
     @Override
-    public AuditResult activeAudit(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint)
-    {
+    public AuditResult activeAudit(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+        return activeAudit(baseRequestResponse, auditInsertionPoint, false);
+    }
+
+    private List<Marker> markersForPayload(AuditInsertionPoint auditInsertionPoint, ByteArray payload) {
+        List<Range> highlights = auditInsertionPoint.issueHighlights(payload);
+        List<Marker> markers = new ArrayList<>(highlights.size());
+        for (Range range : highlights) {
+            markers.add(Marker.marker(range));
+        }
+
+        return markers;
+    }
+
+    public AuditResult activeAudit(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, boolean fromContextMenu) {
         // initialise list of AuditIssue
         List<AuditIssue> auditIssueList = new ArrayList<>();
 
@@ -50,6 +66,7 @@ class JwtScanCheck implements ScanCheck
         if (matcher.find()) {
 
             JwtModifier jwtModifier = new JwtModifier(api);
+            ByteArray payload;
 
             // determine if JWT is not expired
             if (jwtModifier.isJwtNotExpired(origJwt)) {
@@ -59,67 +76,94 @@ class JwtScanCheck implements ScanCheck
                 api.logging().raiseInfoEvent("Expired JWT identified. Use a valid token for additional checks!");
 
                 // send the expired JWT again to determine if the server accepts it
-                HttpRequest checkRequestExpired = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(origJwt)).withService(baseRequestResponse.httpService());
+                payload = byteArray(origJwt);
+                HttpRequest checkRequestExpired = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+
                 HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestExpired);
                 if (checkRequestResponseSig.response().statusCode() == 200){
-                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, checkRequestResponseSig));
+                    List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
                 }
 
                 return auditResult(auditIssueList);
             }
 
             // send JWT without signature
-            HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.removeSignature(origJwt))).withService(baseRequestResponse.httpService());
+            payload = byteArray(jwtModifier.removeSignature(origJwt));
+            HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+
             HttpRequestResponse checkRequestResponseNoSig = api.http().sendRequest(checkRequestNoSig);
             if (requestWasSuccessful(checkRequestResponseNoSig)){
-                auditIssueList.add(JwtAuditIssues.withoutSignature(baseRequestResponse, checkRequestResponseNoSig));
+                List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                auditIssueList.add(JwtAuditIssues.withoutSignature(baseRequestResponse, checkRequestResponseNoSig.withRequestMarkers(markers)));
 
                 // no need for further checks
                 return auditResult(auditIssueList);
             }
 
-            // send JWT with invalid signature
-            HttpRequest checkRequestSig = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.wrongSignature(origJwt))).withService(baseRequestResponse.httpService());
-            HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestSig);
-            if (requestWasSuccessful(checkRequestResponseSig)) {
-                auditIssueList.add(JwtAuditIssues.invalidSignature(baseRequestResponse, checkRequestResponseSig));
+            // send JWT with invalid signature (skip for active scan)
+            if (fromContextMenu) {
+                payload = byteArray(jwtModifier.wrongSignature(origJwt));
+                HttpRequest checkRequestSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
-                // no need for further checks
-                return auditResult(auditIssueList);
+                HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestSig);
+                if (requestWasSuccessful(checkRequestResponseSig)) {
+                    List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                    auditIssueList.add(JwtAuditIssues.invalidSignature(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
+
+                    // no need for further checks
+                    return auditResult(auditIssueList);
+                }
             }
 
-            // send JWT with none algorithm
-            this.permute("none", "");
-            for (String s : algoList) {
-                HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.algNone(origJwt, s))).withService(baseRequestResponse.httpService());
-                HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
-                if (requestWasSuccessful(checkRequestResponseNone)) {
-                    auditIssueList.add(JwtAuditIssues.getAlgNone(baseRequestResponse, checkRequestResponseNone));
+            // send JWT with none algorithm (skip for active scan)
+            if (fromContextMenu) {
+                this.permute("none", "");
+                for (String s : algoList) {
+                    payload = byteArray(jwtModifier.algNone(origJwt, s));
+                    HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
-                    // stop after a valid none permutation has been found
-                    break;
+                    HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
+                    if (requestWasSuccessful(checkRequestResponseNone)) {
+                        List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                        auditIssueList.add(JwtAuditIssues.getAlgNone(baseRequestResponse, checkRequestResponseNone.withRequestMarkers(markers)));
+
+                        // stop after a valid none permutation has been found
+                        break;
+                    }
                 }
             }
 
             // send JWT with empty password
-            HttpRequest checkRequestEmpty = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.emptyPassword(origJwt))).withService(baseRequestResponse.httpService());
+            payload = byteArray(jwtModifier.emptyPassword(origJwt));
+            HttpRequest checkRequestEmpty = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+
             HttpRequestResponse checkRequestResponseEmpty = api.http().sendRequest(checkRequestEmpty);
             if (requestWasSuccessful(checkRequestResponseEmpty)){
-                auditIssueList.add(JwtAuditIssues.emptyPassword(baseRequestResponse, checkRequestResponseEmpty));
+                List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                auditIssueList.add(JwtAuditIssues.emptyPassword(baseRequestResponse, checkRequestResponseEmpty.withRequestMarkers(markers)));
             }
 
             // send JWT with invalid ECDSA signature
-            HttpRequest checkRequestEcdsa = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.invalidEcdsa(origJwt))).withService(baseRequestResponse.httpService());
+            payload = byteArray(jwtModifier.invalidEcdsa(origJwt));
+            HttpRequest checkRequestEcdsa = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+
             HttpRequestResponse checkRequestResponseEcdsa = api.http().sendRequest(checkRequestEcdsa);
             if (requestWasSuccessful(checkRequestResponseEcdsa)){
-                auditIssueList.add(JwtAuditIssues.invalidEcdsa(baseRequestResponse, checkRequestResponseEcdsa));
+                List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                auditIssueList.add(JwtAuditIssues.invalidEcdsa(baseRequestResponse, checkRequestResponseEcdsa.withRequestMarkers(markers)));
             }
 
-            // send JWT with JWKS injection
-            HttpRequest checkRequestJwks = auditInsertionPoint.buildHttpRequestWithPayload(byteArray(jwtModifier.jwksInjection(origJwt))).withService(baseRequestResponse.httpService());
-            HttpRequestResponse checkRequestResponseJwks = api.http().sendRequest(checkRequestJwks);
-            if (requestWasSuccessful(checkRequestResponseJwks)){
-                auditIssueList.add(JwtAuditIssues.jwksInjection(baseRequestResponse, checkRequestResponseJwks));
+            // send JWT with JWKS injection (skip for active scan)
+            if (fromContextMenu) {
+                payload = byteArray(jwtModifier.jwksInjection(origJwt));
+                HttpRequest checkRequestJwks = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+
+                HttpRequestResponse checkRequestResponseJwks = api.http().sendRequest(checkRequestJwks);
+                if (requestWasSuccessful(checkRequestResponseJwks)) {
+                    List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
+                    auditIssueList.add(JwtAuditIssues.jwksInjection(baseRequestResponse, checkRequestResponseJwks.withRequestMarkers(markers)));
+                }
             }
         }
 

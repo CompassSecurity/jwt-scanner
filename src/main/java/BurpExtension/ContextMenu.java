@@ -72,7 +72,7 @@ public class ContextMenu implements ContextMenuItemsProvider
                                 List<AuditInsertionPoint> auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
 
                                 for (AuditInsertionPoint insertionPoint : auditInsertionPoints) {
-                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint);
+                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint,true);
 
                                     for (AuditIssue issue : auditResult.auditIssues()) {
                                         if (!IterableUtils.contains(api.siteMap().issues(), issue, jwtAuditIssueEquator)) {
@@ -97,7 +97,7 @@ public class ContextMenu implements ContextMenuItemsProvider
                     retrieveSelectedRequestItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
                             this.executor.execute(() -> {
                                 for (AuditInsertionPoint insertionPoint : auditInsertionPoints) {
-                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint);
+                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint,true);
 
                                     for (AuditIssue issue : auditResult.auditIssues()) {
                                         if (!IterableUtils.contains(api.siteMap().issues(), issue, jwtAuditIssueEquator)) {
