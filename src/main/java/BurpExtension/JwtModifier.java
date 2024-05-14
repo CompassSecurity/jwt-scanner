@@ -1,5 +1,7 @@
 package BurpExtension;
+import burp.api.montoya.core.ByteArray;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.KeyPairBuilder;
 import io.jsonwebtoken.security.Keys;
 import burp.api.montoya.MontoyaApi;
 import javax.crypto.Mac;
@@ -9,6 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import com.nimbusds.jose.jwk.RSAKey;
@@ -90,7 +95,7 @@ public class JwtModifier {
             JSONObject headerObject = new JSONObject();
             headerObject.put("alg", "RS256");
 
-            KeyPair keyPair = generateRS256KeyPair();
+            KeyPair keyPair = loadRS256KeyPair();
             RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
 
             RSAKey jwk = new RSAKey.Builder(publicKey).build();
@@ -116,11 +121,43 @@ public class JwtModifier {
     private static String base64UrlEncodeNoPadding(byte[] input) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(input);
     }
-    private static KeyPair generateRS256KeyPair() throws NoSuchAlgorithmException {
 
+    private KeyPair generateRS256KeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
+
         return keyPairGenerator.generateKeyPair();
+    }
+
+    private KeyPair loadRS256KeyPair() throws NoSuchAlgorithmException {
+        // load PrivateKey and PublicKey
+        ByteArray privateKeyByteArray = this.api.persistence().extensionData().getByteArray("privateKey");
+        ByteArray publicKeyByteArray = this.api.persistence().extensionData().getByteArray("publicKey");
+
+        if (privateKeyByteArray == null || publicKeyByteArray == null) {
+            KeyPair keyPair = generateRS256KeyPair();
+
+            // store PrivateKey and PublicKey
+            byte[] privateKeyByte = keyPair.getPrivate().getEncoded();
+            this.api.persistence().extensionData().setByteArray("privateKey", ByteArray.byteArray(privateKeyByte));
+            byte[] publicKeyByte = keyPair.getPublic().getEncoded();
+            this.api.persistence().extensionData().setByteArray("publicKey", ByteArray.byteArray(publicKeyByte));
+
+            return keyPair;
+        } else {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+            PrivateKey privateKey = null;
+            PublicKey publicKey = null;
+            try {
+                privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyByteArray.getBytes()));
+                publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyByteArray.getBytes()));
+            } catch (InvalidKeySpecException e) {
+                this.api.logging().logToError(e.getMessage());
+            }
+
+            return new KeyPair(publicKey, privateKey);
+        }
     }
 
     private static String signJWTRSA(String header, String payload, PrivateKey privateKey) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
