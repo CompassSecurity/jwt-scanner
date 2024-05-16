@@ -6,7 +6,7 @@
 
     <groupId>com.compass-security</groupId>
     <artifactId>JWT-scanner</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.4</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -17,37 +17,34 @@
         <dependency>
             <groupId>net.portswigger.burp.extensions</groupId>
             <artifactId>montoya-api</artifactId>
-            <version>2023.3</version>
+            <version>2023.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.5.0-M1</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.5</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20210307</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.57</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.57</version>
+            <version>20231013</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
@@ -57,14 +54,6 @@
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>

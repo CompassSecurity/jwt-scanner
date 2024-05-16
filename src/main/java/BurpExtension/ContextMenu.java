@@ -9,16 +9,13 @@
 package BurpExtension;
 
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.core.Range;
 import burp.api.montoya.core.ToolType;
-import burp.api.montoya.http.Http;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.scanner.Scanner;
-import burp.api.montoya.ui.Selection;
+import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
 import burp.api.montoya.ui.contextmenu.ContextMenuItemsProvider;
-import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
-import burp.api.montoya.ui.editor.HttpRequestEditor;
+import burp.api.montoya.scanner.AuditResult;
+import burp.api.montoya.scanner.audit.issues.AuditIssue;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,18 +24,18 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.collections4.IterableUtils;
+
 public class ContextMenu implements ContextMenuItemsProvider
 {
-
     private final MontoyaApi api;
-    private Scanner scanner;
     private final Executor executor = Executors.newSingleThreadExecutor();
+
+    private final JwtAuditIssueEquator jwtAuditIssueEquator = new JwtAuditIssueEquator();
 
     public ContextMenu(MontoyaApi api)
     {
-
         this.api = api;
-        scanner = api.scanner();
     }
 
     @Override
@@ -46,20 +43,18 @@ public class ContextMenu implements ContextMenuItemsProvider
     {
         if (event.isFromTool(ToolType.PROXY, ToolType.REPEATER, ToolType.TARGET, ToolType.LOGGER, ToolType.INTRUDER))
         {
-            MessageEditorHttpRequestResponse editorHttpRequestResponse = null;
-            HttpRequestResponse requestResponse;
-
-            boolean editorIsPresent = event.messageEditorRequestResponse().isPresent();
-
             List<Component> menuItemList = new ArrayList<>();
 
+            HttpRequestResponse requestResponse;
+
+            // determine if context menu is triggered on message editor
+            boolean editorIsPresent = event.messageEditorRequestResponse().isPresent();
             if (editorIsPresent) {
-                editorHttpRequestResponse = event.messageEditorRequestResponse().get();
-                requestResponse =  editorHttpRequestResponse.requestResponse();
+                requestResponse =  event.messageEditorRequestResponse().get().requestResponse();
             } else {
                 List<HttpRequestResponse> selectedRequests = event.selectedRequestResponses();
 
-                // only 1 request is support at this time
+                // only 1 request is support at this time, otherwise no menu item is shown
                 if (selectedRequests.size() == 1) {
                     requestResponse = selectedRequests.get(0);
                 } else {
@@ -67,28 +62,54 @@ public class ContextMenu implements ContextMenuItemsProvider
                 }
             }
 
-            // Autodetect JWT
-            JMenuItem retrieveRequestItem = new JMenuItem("Autodetect JWT");
+            JwtScanCheck scan = new JwtScanCheck(api);
+            JwtInsertionPointProvider insertionPointProvider = new JwtInsertionPointProvider(api);
 
-            JWTScanCheck scan = new JWTScanCheck(api);
-            JwtInsertionPoint insertionPoint = new JwtInsertionPoint(api,requestResponse.request());
-            retrieveRequestItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
-                    this.executor.execute(() -> scan.activeAudit(requestResponse,insertionPoint)))
+            // Autodetect JWT
+            JMenuItem autodetectMenuItem = new JMenuItem("Autodetect JWT");
+            autodetectMenuItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
+                    this.executor.execute(() -> {
+                                List<AuditInsertionPoint> auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
+
+                                for (AuditInsertionPoint insertionPoint : auditInsertionPoints) {
+                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint,true);
+
+                                    for (AuditIssue issue : auditResult.auditIssues()) {
+                                        if (!IterableUtils.contains(api.siteMap().issues(), issue, jwtAuditIssueEquator)) {
+                                            api.siteMap().add(issue);
+                                        }
+                                    }
+                                }
+                    }))
             );
-            menuItemList.add(retrieveRequestItem);
+            menuItemList.add(autodetectMenuItem);
 
             // Selected JWT
-            if (editorIsPresent && editorHttpRequestResponse.selectionOffsets().isPresent()) {
-                JMenuItem retrieveSelectedRequestItem = new JMenuItem("Selected JWT");
+            if (editorIsPresent && event.messageEditorRequestResponse().get().selectionOffsets().isPresent()) {
+
                 int startindex = event.messageEditorRequestResponse().get().selectionOffsets().get().startIndexInclusive();
                 int endindex = event.messageEditorRequestResponse().get().selectionOffsets().get().endIndexExclusive();
-                JWTScanCheck scanSelected = new JWTScanCheck(api);
-                JwtInsertionPoint insertionPointSelected = new JwtInsertionPoint(api,requestResponse.request(),startindex,endindex);
-                retrieveSelectedRequestItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
-                    this.executor.execute(() -> scanSelected.activeAudit(requestResponse,insertionPointSelected)))
-                );
 
-                menuItemList.add(retrieveSelectedRequestItem);
+                List<AuditInsertionPoint> auditInsertionPoints = insertionPointProvider.provideInsertionPointsInSelection(requestResponse, startindex, endindex);
+
+                if (!auditInsertionPoints.isEmpty()) {
+                    JMenuItem retrieveSelectedRequestItem = new JMenuItem("Selected JWT");
+                    retrieveSelectedRequestItem.addActionListener(l -> SwingUtilities.invokeLater(() ->
+                            this.executor.execute(() -> {
+                                for (AuditInsertionPoint insertionPoint : auditInsertionPoints) {
+                                    AuditResult auditResult = scan.activeAudit(requestResponse,insertionPoint,true);
+
+                                    for (AuditIssue issue : auditResult.auditIssues()) {
+                                        if (!IterableUtils.contains(api.siteMap().issues(), issue, jwtAuditIssueEquator)) {
+                                            api.siteMap().add(issue);
+                                        }
+                                    }
+                                }
+                            }))
+                    );
+
+                    menuItemList.add(retrieveSelectedRequestItem);
+                }
             }
 
             return menuItemList;
