@@ -44,7 +44,9 @@ class JwtScanCheck implements ScanCheck
         List<Range> highlights = auditInsertionPoint.issueHighlights(payload);
         List<Marker> markers = new ArrayList<>(highlights.size());
         for (Range range : highlights) {
-            markers.add(Marker.marker(range));
+            int startIndex = range.startIndexInclusive();
+            int endIndex = range.startIndexInclusive() + payload.length();
+            markers.add(Marker.marker(startIndex, endIndex));
         }
 
         return markers;
