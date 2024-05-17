@@ -40,14 +40,14 @@ public class JwtModifier {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(input);
     }
 
-    public boolean isJwtNotExpired(String jwt) {
+    public boolean isJwtExpired(String jwt) {
         String[] jwtParts = jwt.split("\\.");
         String payload = jwtParts[1];
         String decodedClaim = decodeBase64Url(payload);
         JSONObject claim = new JSONObject(decodedClaim);
         long expValue = claim.getLong("exp");
         long currentTime = System.currentTimeMillis()/1000;
-        return expValue > currentTime;
+        return expValue < currentTime;
     }
 
     public String removeSignature(String jwt){

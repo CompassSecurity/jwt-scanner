@@ -6,6 +6,8 @@ import burp.api.montoya.core.Marker;
 import burp.api.montoya.core.Range;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.message.responses.analysis.AttributeType;
+import burp.api.montoya.http.message.responses.analysis.ResponseVariationsAnalyzer;
 import burp.api.montoya.scanner.AuditResult;
 import burp.api.montoya.scanner.ConsolidationAction;
 import burp.api.montoya.scanner.ScanCheck;
@@ -70,21 +72,17 @@ class JwtScanCheck implements ScanCheck
             JwtModifier jwtModifier = new JwtModifier(api);
             ByteArray payload;
 
-            // determine if JWT is not expired
-            if (jwtModifier.isJwtNotExpired(origJwt)) {
-                // Debug output
-                api.logging().logToOutput("JWT in original request:\n" + origJwt);
-            } else {
-                api.logging().raiseInfoEvent("Expired JWT identified. Use a valid token for additional checks!");
+            // send base request
+            HttpRequestResponse baseResponse = api.http().sendRequest(baseRequestResponse.request().withService(baseRequestResponse.httpService()));
 
-                // send the expired JWT again to determine if the server accepts it
-                payload = byteArray(origJwt);
-                HttpRequest checkRequestExpired = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+            // determine if JWT is expired
+            if (jwtModifier.isJwtExpired(origJwt)) {
+                api.logging().raiseInfoEvent("The JWT is expired. Use a valid token for additional checks!");
 
-                HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestExpired);
-                if (checkRequestResponseSig.response().statusCode() == 200){
-                    List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
+                // if the server responds with 200, assume the request has been accepted
+                if (baseResponse.response().statusCode() == 200){
+                    List<Marker> markers = markersForPayload(auditInsertionPoint, byteArray(origJwt));
+                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, baseResponse.withRequestMarkers(markers)));
                 }
 
                 return auditResult(auditIssueList);
@@ -95,7 +93,7 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseNoSig = api.http().sendRequest(checkRequestNoSig);
-            if (requestWasSuccessful(checkRequestResponseNoSig)){
+            if (requestWasSuccessful(baseResponse, checkRequestResponseNoSig)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                 auditIssueList.add(JwtAuditIssues.withoutSignature(baseRequestResponse, checkRequestResponseNoSig.withRequestMarkers(markers)));
 
@@ -109,7 +107,7 @@ class JwtScanCheck implements ScanCheck
                 HttpRequest checkRequestSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                 HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestSig);
-                if (requestWasSuccessful(checkRequestResponseSig)) {
+                if (requestWasSuccessful(baseResponse, checkRequestResponseSig)) {
                     List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                     auditIssueList.add(JwtAuditIssues.invalidSignature(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
 
@@ -126,7 +124,7 @@ class JwtScanCheck implements ScanCheck
                     HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                     HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
-                    if (requestWasSuccessful(checkRequestResponseNone)) {
+                    if (requestWasSuccessful(baseResponse, checkRequestResponseNone)) {
                         List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                         auditIssueList.add(JwtAuditIssues.getAlgNone(baseRequestResponse, checkRequestResponseNone.withRequestMarkers(markers)));
 
@@ -141,7 +139,7 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestEmpty = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseEmpty = api.http().sendRequest(checkRequestEmpty);
-            if (requestWasSuccessful(checkRequestResponseEmpty)){
+            if (requestWasSuccessful(baseResponse, checkRequestResponseEmpty)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                 auditIssueList.add(JwtAuditIssues.emptyPassword(baseRequestResponse, checkRequestResponseEmpty.withRequestMarkers(markers)));
             }
@@ -151,7 +149,7 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestEcdsa = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseEcdsa = api.http().sendRequest(checkRequestEcdsa);
-            if (requestWasSuccessful(checkRequestResponseEcdsa)){
+            if (requestWasSuccessful(baseResponse, checkRequestResponseEcdsa)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                 auditIssueList.add(JwtAuditIssues.invalidEcdsa(baseRequestResponse, checkRequestResponseEcdsa.withRequestMarkers(markers)));
             }
@@ -162,7 +160,7 @@ class JwtScanCheck implements ScanCheck
                 HttpRequest checkRequestJwks = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                 HttpRequestResponse checkRequestResponseJwks = api.http().sendRequest(checkRequestJwks);
-                if (requestWasSuccessful(checkRequestResponseJwks)) {
+                if (requestWasSuccessful(baseResponse, checkRequestResponseJwks)) {
                     List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
                     auditIssueList.add(JwtAuditIssues.jwksInjection(baseRequestResponse, checkRequestResponseJwks.withRequestMarkers(markers)));
                 }
@@ -172,8 +170,19 @@ class JwtScanCheck implements ScanCheck
         return auditResult(auditIssueList);
     }
 
-    boolean requestWasSuccessful(HttpRequestResponse requestResponse) {
-        return (requestResponse.response().statusCode() == 200);
+    boolean requestWasSuccessful(HttpRequestResponse baseResponse, HttpRequestResponse requestResponse) {
+        ResponseVariationsAnalyzer responseVariationsAnalyzer = api.http().createResponseVariationsAnalyzer();
+
+        responseVariationsAnalyzer.updateWith(baseResponse.response());
+        responseVariationsAnalyzer.updateWith(requestResponse.response());
+
+        // Debug
+        //api.logging().logToOutput("Variations: " + responseVariationsAnalyzer.variantAttributes().size());
+        //for (AttributeType attribute : responseVariationsAnalyzer.variantAttributes()) {
+        //    api.logging().logToOutput("     " + attribute.name());
+        //}
+
+        return responseVariationsAnalyzer.variantAttributes().size() <= 5;
     }
 
     @Override
