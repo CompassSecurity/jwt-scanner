@@ -6,7 +6,7 @@
 
     <groupId>com.compass-security</groupId>
     <artifactId>JWT-scanner</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
