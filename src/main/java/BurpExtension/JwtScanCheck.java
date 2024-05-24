@@ -6,6 +6,8 @@ import burp.api.montoya.core.Marker;
 import burp.api.montoya.core.Range;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.message.responses.analysis.AttributeType;
+import burp.api.montoya.http.message.responses.analysis.ResponseVariationsAnalyzer;
 import burp.api.montoya.scanner.AuditResult;
 import burp.api.montoya.scanner.ConsolidationAction;
 import burp.api.montoya.scanner.ScanCheck;
@@ -69,22 +71,19 @@ class JwtScanCheck implements ScanCheck
 
             JwtModifier jwtModifier = new JwtModifier(api);
             ByteArray payload;
+            int successConfidence;
 
-            // determine if JWT is not expired
-            if (jwtModifier.isJwtNotExpired(origJwt)) {
-                // Debug output
-                api.logging().logToOutput("JWT in original request:\n" + origJwt);
-            } else {
-                api.logging().raiseInfoEvent("Expired JWT identified. Use a valid token for additional checks!");
+            // send base request
+            HttpRequestResponse baseResponse = api.http().sendRequest(baseRequestResponse.request().withService(baseRequestResponse.httpService()));
 
-                // send the expired JWT again to determine if the server accepts it
-                payload = byteArray(origJwt);
-                HttpRequest checkRequestExpired = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+            // determine if JWT is expired
+            if (jwtModifier.isJwtExpired(origJwt)) {
+                api.logging().raiseInfoEvent("The JWT is expired. Use a valid token for additional checks!");
 
-                HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestExpired);
-                if (checkRequestResponseSig.response().statusCode() == 200){
-                    List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
+                // if the server responds with 200, assume the request has been accepted
+                if (baseResponse.response().statusCode() == 200){
+                    List<Marker> markers = markersForPayload(auditInsertionPoint, byteArray(origJwt));
+                    auditIssueList.add(JwtAuditIssues.expired(baseRequestResponse, baseResponse.withRequestMarkers(markers)));
                 }
 
                 return auditResult(auditIssueList);
@@ -95,9 +94,11 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestNoSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseNoSig = api.http().sendRequest(checkRequestNoSig);
-            if (requestWasSuccessful(checkRequestResponseNoSig)){
+            successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseNoSig);
+
+            if (requestWasSuccessful(baseResponse, checkRequestResponseNoSig,successConfidence)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                auditIssueList.add(JwtAuditIssues.withoutSignature(baseRequestResponse, checkRequestResponseNoSig.withRequestMarkers(markers)));
+                auditIssueList.add(JwtAuditIssues.withoutSignature(baseRequestResponse, checkRequestResponseNoSig.withRequestMarkers(markers),successConfidence));
 
                 // no need for further checks
                 return auditResult(auditIssueList);
@@ -109,9 +110,10 @@ class JwtScanCheck implements ScanCheck
                 HttpRequest checkRequestSig = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                 HttpRequestResponse checkRequestResponseSig = api.http().sendRequest(checkRequestSig);
-                if (requestWasSuccessful(checkRequestResponseSig)) {
+                successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseSig);
+                if (requestWasSuccessful(baseResponse, checkRequestResponseSig,successConfidence)) {
                     List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                    auditIssueList.add(JwtAuditIssues.invalidSignature(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers)));
+                    auditIssueList.add(JwtAuditIssues.invalidSignature(baseRequestResponse, checkRequestResponseSig.withRequestMarkers(markers),successConfidence));
 
                     // no need for further checks
                     return auditResult(auditIssueList);
@@ -126,9 +128,10 @@ class JwtScanCheck implements ScanCheck
                     HttpRequest checkRequestNone = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                     HttpRequestResponse checkRequestResponseNone = api.http().sendRequest(checkRequestNone);
-                    if (requestWasSuccessful(checkRequestResponseNone)) {
+                    successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseNone);
+                    if (requestWasSuccessful(baseResponse, checkRequestResponseNone,successConfidence)) {
                         List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                        auditIssueList.add(JwtAuditIssues.getAlgNone(baseRequestResponse, checkRequestResponseNone.withRequestMarkers(markers)));
+                        auditIssueList.add(JwtAuditIssues.getAlgNone(baseRequestResponse, checkRequestResponseNone.withRequestMarkers(markers),successConfidence));
 
                         // stop after a valid none permutation has been found
                         break;
@@ -141,9 +144,11 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestEmpty = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseEmpty = api.http().sendRequest(checkRequestEmpty);
-            if (requestWasSuccessful(checkRequestResponseEmpty)){
+            successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseEmpty);
+
+            if (requestWasSuccessful(baseResponse, checkRequestResponseEmpty,successConfidence)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                auditIssueList.add(JwtAuditIssues.emptyPassword(baseRequestResponse, checkRequestResponseEmpty.withRequestMarkers(markers)));
+                auditIssueList.add(JwtAuditIssues.emptyPassword(baseRequestResponse, checkRequestResponseEmpty.withRequestMarkers(markers),successConfidence));
             }
 
             // send JWT with invalid ECDSA signature
@@ -151,9 +156,10 @@ class JwtScanCheck implements ScanCheck
             HttpRequest checkRequestEcdsa = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
             HttpRequestResponse checkRequestResponseEcdsa = api.http().sendRequest(checkRequestEcdsa);
-            if (requestWasSuccessful(checkRequestResponseEcdsa)){
+            successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseEcdsa);
+            if (requestWasSuccessful(baseResponse, checkRequestResponseEcdsa, successConfidence)){
                 List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                auditIssueList.add(JwtAuditIssues.invalidEcdsa(baseRequestResponse, checkRequestResponseEcdsa.withRequestMarkers(markers)));
+                auditIssueList.add(JwtAuditIssues.invalidEcdsa(baseRequestResponse, checkRequestResponseEcdsa.withRequestMarkers(markers),successConfidence));
             }
 
             // send JWT with JWKS injection (skip for active scan)
@@ -162,9 +168,10 @@ class JwtScanCheck implements ScanCheck
                 HttpRequest checkRequestJwks = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
 
                 HttpRequestResponse checkRequestResponseJwks = api.http().sendRequest(checkRequestJwks);
-                if (requestWasSuccessful(checkRequestResponseJwks)) {
+                successConfidence = getSuccessConfidence(baseResponse,checkRequestResponseJwks);
+                if (requestWasSuccessful(baseResponse, checkRequestResponseJwks, successConfidence)) {
                     List<Marker> markers = markersForPayload(auditInsertionPoint, payload);
-                    auditIssueList.add(JwtAuditIssues.jwksInjection(baseRequestResponse, checkRequestResponseJwks.withRequestMarkers(markers)));
+                    auditIssueList.add(JwtAuditIssues.jwksInjection(baseRequestResponse, checkRequestResponseJwks.withRequestMarkers(markers), successConfidence));
                 }
             }
         }
@@ -172,8 +179,24 @@ class JwtScanCheck implements ScanCheck
         return auditResult(auditIssueList);
     }
 
-    boolean requestWasSuccessful(HttpRequestResponse requestResponse) {
-        return (requestResponse.response().statusCode() == 200);
+    int getSuccessConfidence(HttpRequestResponse baseResponse, HttpRequestResponse requestResponse) {
+        ResponseVariationsAnalyzer responseVariationsAnalyzer = api.http().createResponseVariationsAnalyzer();
+
+        responseVariationsAnalyzer.updateWith(baseResponse.response());
+        responseVariationsAnalyzer.updateWith(requestResponse.response());
+
+        // Debug
+        api.logging().logToOutput("Orig Status code:" + baseResponse.response().statusCode());
+        api.logging().logToOutput("New status code: " + requestResponse.response().statusCode());
+        api.logging().logToOutput("Variations: " + responseVariationsAnalyzer.variantAttributes().size());
+        for (AttributeType attribute : responseVariationsAnalyzer.variantAttributes()) {
+            api.logging().logToOutput("     " + attribute.name());
+        }
+            return responseVariationsAnalyzer.variantAttributes().size();
+    }
+
+    boolean requestWasSuccessful(HttpRequestResponse baseResponse, HttpRequestResponse requestResponse, int successConfidence){
+        return baseResponse.response().statusCode() == requestResponse.response().statusCode() && successConfidence <= 5;
     }
 
     @Override

@@ -41,7 +41,6 @@ Autodetect JWT from valid request:
 3. Select the downloaded jar
 
 Manually select JWT from valid request:
-
 ![img_1.png](Doc/manualselect.png)
 ## Build
 Using maven to build jar file with dependencies:
