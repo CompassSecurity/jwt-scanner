@@ -62,7 +62,7 @@ class JwtScanCheck implements ScanCheck
         String origJwt = auditInsertionPoint.baseValue();
 
         // verify that the insertion point represents a JWT as this ScanCheck performs transformations
-        String jwtRegex = "(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_\\-+/=]*)";
+        String jwtRegex = "(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=\\-]+)\\.([a-zA-Z0-9_\\-+/=]*)";
         Pattern pattern = Pattern.compile(jwtRegex);
         Matcher matcher = pattern.matcher(origJwt);
 
@@ -186,7 +186,7 @@ class JwtScanCheck implements ScanCheck
         responseVariationsAnalyzer.updateWith(requestResponse.response());
 
         // Debug
-        api.logging().logToOutput("Orig Status code:" + baseResponse.response().statusCode());
+        //api.logging().logToOutput("Orig Status code:" + baseResponse.response().statusCode());
         api.logging().logToOutput("New status code: " + requestResponse.response().statusCode());
         api.logging().logToOutput("Variations: " + responseVariationsAnalyzer.variantAttributes().size());
         for (AttributeType attribute : responseVariationsAnalyzer.variantAttributes()) {

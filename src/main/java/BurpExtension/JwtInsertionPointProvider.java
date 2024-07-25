@@ -18,7 +18,7 @@ public class JwtInsertionPointProvider implements AuditInsertionPointProvider {
         this.api = api;
     }
 
-    private final Pattern jwtPattern = Pattern.compile("(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_\\-+/=]*)");
+    private final Pattern jwtPattern = Pattern.compile("(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=\\-]+)\\.([a-zA-Z0-9_\\-+/=]*)");
 
     @Override
     public List<AuditInsertionPoint> provideInsertionPoints(HttpRequestResponse httpRequestResponse) {
