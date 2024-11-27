@@ -192,11 +192,11 @@ class JwtScanCheck implements ScanCheck
         for (AttributeType attribute : responseVariationsAnalyzer.variantAttributes()) {
             api.logging().logToOutput("     " + attribute.name());
         }
-            return responseVariationsAnalyzer.variantAttributes().size();
+        return responseVariationsAnalyzer.variantAttributes().size();
     }
 
     boolean requestWasSuccessful(HttpRequestResponse baseResponse, HttpRequestResponse requestResponse, int successConfidence){
-        return baseResponse.response().statusCode() == requestResponse.response().statusCode() && successConfidence <= 5;
+        return baseResponse.response().statusCode() == requestResponse.response().statusCode() && successConfidence <= 1;
     }
 
     @Override
