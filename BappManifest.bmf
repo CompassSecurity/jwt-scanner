@@ -1,0 +1,13 @@
+Uuid: f13f85e71b9a4bac853ab8a38147a2e1
+ExtensionType: 1
+Name: JWT Scanner
+RepoName: jwt-scanner
+ScreenVersion: 1.1.0
+SerialVersion: 1
+MinPlatformVersion: 0
+ProOnly: False
+Author: Dario Caluzi / Tobias Hort-Giess
+ShortDescription: JWT Scanner is a Burp Suite extension for automated testing of JSON Web Token (JWT) implementations of web applications. 
+EntryPoint: build/libs/jwt-scanner-2.1.0.jar
+BuildCommand: ./gradlew jar
+SupportedProducts: Pro, Community

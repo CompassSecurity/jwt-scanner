@@ -1,7 +1,7 @@
 # JWT-scanner - Burp Extension
-## Description
-JWT Scanner is a Burp Suite extension for automated testing of Jason Web Token (JWT) implementations of web applications. 
 
+## Description
+JWT Scanner is a Burp Suite extension for automated testing of JSON Web Token (JWT) implementations of web applications. 
 
 ### Checks
 - Signature presence
@@ -28,7 +28,9 @@ Run an active scan or manually select a request from to check:
 5. In case of a identified vulnerability a issue is generated
 
 Autodetect JWT from valid request:
-![img.png](Doc/autoselect.png)
+
+![img.png](docs/autoselect.png)
+
 ### Manually select JWT
 3. Highlight the target JWT in request
 4. Right-click highlighted JWT request
@@ -37,13 +39,15 @@ Autodetect JWT from valid request:
 
 ## Installation
 1. Download the latest pre-built jar file from [releases](https://github.com/CompassSecurity/jwt-scanner/releases).
-2. Extender -> Tab Installed -> Add -> Extension Details -> Extension Type: *Java* -> Select file ...
+2. Extension -> Installed -> Add -> Extension Details -> Extension Type: *Java* -> Select file ...
 3. Select the downloaded jar
 
 Manually select JWT from valid request:
-![img_1.png](Doc/manualselect.png)
+
+![img_1.png](docs/manualselect.png)
+
 ## Build
-Using maven to build jar file with dependencies:
+Using gradle to build jar:
 ```shell
-mvn package -f pom.xml
+./gradlew jar
 ```

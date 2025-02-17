@@ -14,18 +14,22 @@ compileJava {
     options.compilerArgs << "-Xlint:deprecation"
 }
 
+configurations {
+    mockitoAgent
+}
+
 dependencies {
-    compileOnly libs.net.portswigger.burp.myextensions.montoya.api
+    compileOnly libs.net.portswigger.burp.extensions.montoya.api
 
-    implementation libs.org.apache.commons.commons.collections4
-    implementation libs.io.jsonwebtoken.jjwt.api
-    implementation libs.org.json.json
-    implementation libs.com.nimbusds.nimbus.jose.jwt
-    implementation libs.io.jsonwebtoken.jjwt.impl
-    implementation libs.io.jsonwebtoken.jjwt.jackson
+    implementation(libs.com.google.code.gson.gson)
 
-    testImplementation libs.net.portswigger.burp.myextensions.montoya.api
+    testImplementation libs.net.portswigger.burp.extensions.montoya.api
+    testImplementation libs.org.hamcrest.hamcrest.all
     testImplementation libs.org.junit.jupiter
+    testImplementation libs.org.slf4j.slf4j.simple
+    testImplementation libs.org.mockito.mockito.core
+
+    mockitoAgent(libs.org.mockito.mockito.core) { transitive = false }
 }
 
 jar {
@@ -41,5 +45,6 @@ jar {
 }
 
 test {
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
     useJUnitPlatform()
 }
