@@ -51,27 +51,10 @@ public class MontoyaApiAdapter {
             this.logging = logging;
         }
 
-        public void logToError(String message) {
-            if (this.logging != null) {
-                this.logging.logToError(message);
-            } else {
-                System.err.println(message);
-            }
-        }
-
         public void logToError(Throwable throwable) {
             if (this.logging != null) {
                 this.logging.logToError(throwable);
             } else {
-                throwable.printStackTrace(System.err);
-            }
-        }
-
-        public void logToError(String message, Throwable throwable) {
-            if (this.logging != null) {
-                this.logging.logToError(message, throwable);
-            } else {
-                System.err.println(message);
                 throwable.printStackTrace(System.err);
             }
         }

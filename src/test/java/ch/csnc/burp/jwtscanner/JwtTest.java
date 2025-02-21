@@ -1,6 +1,5 @@
 package ch.csnc.burp.jwtscanner;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -132,7 +131,7 @@ public class JwtTest {
     }
 
     @Test
-    // TODO: improve test
+        // TODO: improve test
     void withInjectedJwkSelfSigned() {
         var encodedJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         assertDoesNotThrow(new Jwt(encodedJwt)::withInjectedJwkSelfSigned);

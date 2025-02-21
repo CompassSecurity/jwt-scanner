@@ -14,7 +14,7 @@ import static burp.api.montoya.scanner.audit.issues.AuditIssue.auditIssue;
 public abstract class JwtAuditIssues {
 
     @FunctionalInterface
-    interface JwtAuditIssue {
+    public interface JwtAuditIssue {
         AuditIssue get(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses);
     }
 
@@ -40,6 +40,19 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
+    public static AuditIssue expired(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue("JWT expired",
+                "",
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
     public static AuditIssue noExpiry(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT does not expire",
                 """
@@ -54,19 +67,6 @@ public abstract class JwtAuditIssues {
                 null,
                 null,
                 AuditIssueSeverity.HIGH,
-                listOf(baseRequestResponse, checkRequestResponses));
-    }
-
-    public static AuditIssue expired(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
-        return auditIssue("JWT expired",
-                "The JWT is expired.",
-                "",
-                baseRequestResponse.request().url(),
-                AuditIssueSeverity.INFORMATION,
-                confidence,
-                null,
-                null,
-                AuditIssueSeverity.INFORMATION,
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 

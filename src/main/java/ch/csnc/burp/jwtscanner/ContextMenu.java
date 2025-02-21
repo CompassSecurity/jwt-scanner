@@ -4,6 +4,7 @@ import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.scanner.audit.issues.AuditIssue;
 import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
 import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
+import ch.csnc.burp.jwtscanner.checks.Checks;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,29 +30,7 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
     public List<Component> provideMenuItems(ContextMenuEvent menuEvent) {
         var menuItems = new ArrayList<Component>();
 
-        var scanAutodetectMenuItem = new JMenuItem("Scan (autodetect)");
-        scanAutodetectMenuItem.addActionListener(actionEvent -> {
-            executor.execute(() -> {
-                var auditIssues = new ArrayList<AuditIssue>();
-                var scanCheck = new JwtScanCheck();
-                var insertionPointProvider = new JwtInsertionPointProvider();
-                var requestResponses = menuEvent.messageEditorRequestResponse()
-                        .map(MessageEditorHttpRequestResponse::requestResponse)
-                        .map(List::of)
-                        .orElseGet(menuEvent::selectedRequestResponses);
-                for (var requestResponse : requestResponses) {
-                    var passiveAuditResult = scanCheck.passiveAudit(requestResponse);
-                    auditIssues.addAll(passiveAuditResult.auditIssues());
-                    var auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
-                    for (var auditInsertionPoint : auditInsertionPoints) {
-                        var activeAuditResult = scanCheck.activeAudit(requestResponse, auditInsertionPoint);
-                        auditIssues.addAll(activeAuditResult.auditIssues());
-                    }
-                }
-                auditIssues.forEach(JwtScannerExtension.api().siteMap()::add);
-            });
-        });
-        menuItems.add(scanAutodetectMenuItem);
+        var siteMap = JwtScannerExtension.api().siteMap();
 
         menuEvent.messageEditorRequestResponse()
                 .flatMap(MessageEditorHttpRequestResponse::selectionOffsets)
@@ -59,7 +38,6 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
                     var scanSelectedMenuItem = new JMenuItem("Scan selected");
                     scanSelectedMenuItem.addActionListener(actionEvent -> {
                         executor.execute(() -> {
-                            var scanCheck = new JwtScanCheck();
                             var requestResponse = menuEvent.messageEditorRequestResponse()
                                     .map(MessageEditorHttpRequestResponse::requestResponse)
                                     .orElseThrow();
@@ -68,17 +46,32 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
                                     requestResponse.request(),
                                     selectionOffsets.startIndexInclusive(),
                                     selectionOffsets.endIndexExclusive());
-                            var passiveAuditResults = scanCheck.passiveAudit(requestResponse);
-                            var auditIssues = new ArrayList<>(passiveAuditResults.auditIssues());
-                            var activeAuditResults = scanCheck.activeAudit(requestResponse, auditInsertionPoint);
-                            auditIssues.addAll(activeAuditResults.auditIssues());
-                            auditIssues.forEach(JwtScannerExtension.api().siteMap()::add);
+                            Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
                         });
                     });
                     menuItems.add(scanSelectedMenuItem);
                 });
 
+        var scanAutodetectMenuItem = new JMenuItem("Scan (autodetect)");
+        scanAutodetectMenuItem.addActionListener(actionEvent -> {
+            executor.execute(() -> {
+                var insertionPointProvider = new JwtInsertionPointProvider();
+                var requestResponses = menuEvent.messageEditorRequestResponse()
+                        .map(MessageEditorHttpRequestResponse::requestResponse)
+                        .map(List::of)
+                        .orElseGet(menuEvent::selectedRequestResponses);
+                for (var requestResponse : requestResponses) {
+                    var auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
+                    for (var auditInsertionPoint : auditInsertionPoints) {
+                        Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
+                    }
+                }
+            });
+        });
+        menuItems.add(scanAutodetectMenuItem);
+
         return menuItems;
     }
+
 
 }
