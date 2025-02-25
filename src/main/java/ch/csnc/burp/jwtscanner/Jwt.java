@@ -117,6 +117,14 @@ public class Jwt {
         };
     }
 
+    public String getJku() {
+        return this.header.getOrDefault("jku", "").toString();
+    }
+
+    public boolean hasJku() {
+        return !this.getJku().isEmpty();
+    }
+
     public Jwt withRemovedSignature() {
         return new Jwt.Builder(this).withSignature("").build();
     }

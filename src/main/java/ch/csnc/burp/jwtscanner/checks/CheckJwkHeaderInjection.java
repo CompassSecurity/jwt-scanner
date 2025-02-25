@@ -9,14 +9,14 @@ import ch.csnc.burp.jwtscanner.JwtAuditIssues;
 import java.util.Optional;
 
 /**
- * Checks whether JWT with injected JWKS is accepted
+ * Checks whether JWT with injected jwk header is accepted
  */
-public class CheckJwksInjection extends Check {
+public class CheckJwkHeaderInjection extends Check {
 
     @Override
     public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return check(baseRequestResponse, auditInsertionPoint, jwt.withInjectedJwkSelfSigned(), JwtAuditIssues::jwksInjection);
+        return check(baseRequestResponse, auditInsertionPoint, jwt.withInjectedJwkSelfSigned(), JwtAuditIssues::jwkHeaderInjection);
     }
 
 }

@@ -17,6 +17,7 @@ public abstract class Checks {
             auditIssueConsumer.accept(auditIssue);
             // Further checks only make sense if the JWT exists.
             new CheckAlg().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckJwks().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckJwtExpired().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckExpiredJwtAccepted().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckWithoutSignature().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
@@ -27,7 +28,7 @@ public abstract class Checks {
                 new CheckAlgNone().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckEmptyPassword().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckInvalidEcdsa().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckJwksInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJwkHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             });
         });
     }

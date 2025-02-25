@@ -32,7 +32,7 @@ public abstract class JwtAuditIssues {
                 "JWT is signed symmetrically",
                 """
                         <p>alg: %s</p>
-                        <p> 
+                        <p>
                           Try to crack it:
                           <pre>hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list</pre>
                         </p>""".formatted(alg),
@@ -80,6 +80,34 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JWT detected",
                 "",
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue jkuDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue(
+                "JSON Web Key Sets detected",
+                "jku: %s".formatted(jwt.getJku()),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue jwksDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue(
+                "JSON Web Key Sets detected",
+                checkRequestResponses[0].request().url(),
                 "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
@@ -228,7 +256,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue jwksInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue jwkHeaderInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT JWKs Injection",
                 "It is possible to include the used public key in the JWK value of the header. The Application takes the included public key to validate the signature",
                 "The JWK provided in the header should not be used to validate the signature.",

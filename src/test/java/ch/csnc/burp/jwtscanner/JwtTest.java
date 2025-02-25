@@ -164,4 +164,12 @@ public class JwtTest {
         var jwt = Jwt.newBuilder().withHeader("alg", alg).build();
         assertThat(jwt.hasAsymmetricAlg(), is(true));
     }
+
+    @Test
+    void testHasJku() {
+        var url = "https://example.com/jwks.json";
+        var jwt = Jwt.newBuilder().withHeader("jku", url).build();
+        assertThat(jwt.hasJku(), is(true));
+        assertThat(jwt.getJku(), equalTo(url));
+    }
 }
