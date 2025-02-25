@@ -19,7 +19,7 @@ public class CheckJwtExpired extends Check {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         if (jwt.isExpired()) {
             var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-            var auditIssue = JwtAuditIssues.expired(AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
+            var auditIssue = JwtAuditIssues.expired(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
             return Optional.of(auditIssue);
         }
         return Optional.empty();

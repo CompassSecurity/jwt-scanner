@@ -99,6 +99,24 @@ public class Jwt {
         return false;
     }
 
+    public String getAlg() {
+        return this.header.getOrDefault("alg", "").toString();
+    }
+
+    public boolean hasSymmetricAlg() {
+        return switch (this.getAlg()) {
+            case "HS256", "HS384", "HS512" -> true;
+            default -> false;
+        };
+    }
+
+    public boolean hasAsymmetricAlg() {
+        return switch (this.getAlg()) {
+            case "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512" -> true;
+            default -> false;
+        };
+    }
+
     public Jwt withRemovedSignature() {
         return new Jwt.Builder(this).withSignature("").build();
     }

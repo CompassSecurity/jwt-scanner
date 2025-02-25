@@ -136,4 +136,32 @@ public class JwtTest {
         var encodedJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         assertDoesNotThrow(new Jwt(encodedJwt)::withInjectedJwkSelfSigned);
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "HS256",
+            "HS384",
+            "HS512",
+    })
+    void isSymmetricallySigned(String alg) {
+        var jwt = Jwt.newBuilder().withHeader("alg", alg).build();
+        assertThat(jwt.hasSymmetricAlg(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "RS256",
+            "RS384",
+            "RS512",
+            "ES256",
+            "ES384",
+            "ES512",
+            "PS256",
+            "PS384",
+            "PS512",
+    })
+    void isAsymmetricallySigned(String alg) {
+        var jwt = Jwt.newBuilder().withHeader("alg", alg).build();
+        assertThat(jwt.hasAsymmetricAlg(), is(true));
+    }
 }

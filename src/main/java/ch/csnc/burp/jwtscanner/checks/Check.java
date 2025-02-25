@@ -31,7 +31,7 @@ public abstract class Check {
         if (baseRequestResponse.response().statusCode() == checkRequestResponse.response().statusCode()) {
             if (similarity.doubleValue() > SIMILARITY_THRESHOLD) {
                 var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-                var auditIssue = jwtAuditIssue.get(AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse.withRequestMarkers(markers));
+                var auditIssue = jwtAuditIssue.get(jwt, AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse.withRequestMarkers(markers));
                 return Optional.of(auditIssue);
             }
         }

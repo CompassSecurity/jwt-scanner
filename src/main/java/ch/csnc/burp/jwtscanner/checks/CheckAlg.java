@@ -10,18 +10,20 @@ import ch.csnc.burp.jwtscanner.JwtAuditIssues;
 import java.util.Optional;
 
 /**
- * This check is not truly a check.
- * Upon entering the {@link } method, we already have a valid insertion point and know that a JWT exists.
- * What this check does additionally is create the corresponding AuditIssue.
+ * This is an informational check. It determines whether the algorithm used is symmetric or asymmetric.
  */
-public class CheckJwtExists extends Check {
+public class CheckAlg extends Check {
 
     @Override
     public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-        var auditIssue = JwtAuditIssues.jwtDetected(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
-        return Optional.of(auditIssue);
+        if (jwt.hasSymmetricAlg()) {
+            return Optional.of(JwtAuditIssues.hasSymmetricAlg(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
+        }
+        if (jwt.hasAsymmetricAlg()) {
+            return Optional.of(JwtAuditIssues.hasAsymmetricAlg(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
+        }
+        return Optional.of(JwtAuditIssues.unknownAlg(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
     }
 
 }

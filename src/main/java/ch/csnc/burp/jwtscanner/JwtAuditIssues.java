@@ -15,7 +15,7 @@ public abstract class JwtAuditIssues {
 
     @FunctionalInterface
     public interface JwtAuditIssue {
-        AuditIssue get(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses);
+        AuditIssue get(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses);
     }
 
     @SafeVarargs
@@ -26,7 +26,57 @@ public abstract class JwtAuditIssues {
         return List.copyOf(list);
     }
 
-    public static AuditIssue jwtDetected(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue hasSymmetricAlg(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        var alg = jwt.getAlg();
+        return auditIssue(
+                "JWT is signed symmetrically",
+                """
+                        <p>alg: %s</p>
+                        <p> 
+                          Try to crack it:
+                          <pre>hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list</pre>
+                        </p>""".formatted(alg),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue hasAsymmetricAlg(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        var alg = jwt.getAlg();
+        return auditIssue(
+                "JWT is signed asymmetrically",
+                "alg: %s".formatted(alg),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue unknownAlg(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        var alg = jwt.getAlg();
+        return auditIssue(
+                "JWT has unknown Algorithm",
+                "alg: %s".formatted(alg),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue jwtDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue(
                 "JWT detected",
                 "",
@@ -40,7 +90,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue expired(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue expired(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT expired",
                 "",
                 "",
@@ -53,7 +103,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue noExpiry(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue noExpiry(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT does not expire",
                 """
                         The JWT does not expire.
@@ -70,7 +120,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue expiredAccepted(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue expiredAccepted(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("Expired JWT accepted",
                 """
                         The server accepts JWTs that are expired.
@@ -88,7 +138,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue withoutSignature(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue withoutSignature(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT Signature not required",
                 """
                         The server accepts JWTs that are not signed
@@ -104,7 +154,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue algNone(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue algNone(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("Algorithm none JWT attack",
                 """
                         The server accepts JWTs created with the "none" algorithm.
@@ -124,7 +174,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue invalidSignature(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue invalidSignature(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("Invalid JWT Signature",
                 """
                         The signature of the JSON Web Tokens (JWT) is not checked by the server.
@@ -142,7 +192,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue emptyPassword(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue emptyPassword(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT signed with empty password",
                 """
                         The signature of the JSON Web Tokens (JWT) is created with an empty password.
@@ -161,7 +211,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue invalidEcdsa(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue invalidEcdsa(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT signed invalid ECDSA parameters",
                 """
                         CVE-2022-21449 Vulnerability in the Oracle Java SE, Oracle GraalVM Enterprise Edition product of Oracle Java SE.
@@ -178,7 +228,7 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-    public static AuditIssue jwksInjection(AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+    public static AuditIssue jwksInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT JWKs Injection",
                 "It is possible to include the used public key in the JWK value of the header. The Application takes the included public key to validate the signature",
                 "The JWK provided in the header should not be used to validate the signature.",

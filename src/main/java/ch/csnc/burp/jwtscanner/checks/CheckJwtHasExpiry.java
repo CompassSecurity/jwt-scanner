@@ -19,7 +19,7 @@ public class CheckJwtHasExpiry extends Check {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         if (!jwt.hasExpiry()) {
             var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-            var auditIssue = JwtAuditIssues.noExpiry(AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
+            var auditIssue = JwtAuditIssues.noExpiry(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
             return Optional.of(auditIssue);
         }
         return Optional.empty();
