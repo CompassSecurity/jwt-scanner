@@ -131,10 +131,18 @@ public class JwtTest {
     }
 
     @Test
-        // TODO: improve test
     void withInjectedJwkSelfSigned() {
+        // TODO: improve test
         var encodedJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         assertDoesNotThrow(new Jwt(encodedJwt)::withInjectedJwkSelfSigned);
+    }
+
+    @Test
+    void withInjectedJkuSelfSigned() {
+        // TODO: improve test
+        var encodedJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+        assertDoesNotThrow(new Jwt(encodedJwt)::withInjectedJkuSelfSigned);
+        System.out.println(new Jwt(encodedJwt).withInjectedJkuSelfSigned());
     }
 
     @ParameterizedTest
@@ -169,7 +177,8 @@ public class JwtTest {
     void testHasJku() {
         var url = "https://example.com/jwks.json";
         var jwt = Jwt.newBuilder().withHeader("jku", url).build();
-        assertThat(jwt.hasJku(), is(true));
-        assertThat(jwt.getJku(), equalTo(url));
+        assertThat(jwt.getJku().isPresent(), is(true));
+        assertThat(jwt.getJku().orElseThrow(), equalTo(url));
     }
+
 }

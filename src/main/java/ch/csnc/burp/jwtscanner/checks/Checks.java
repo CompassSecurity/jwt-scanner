@@ -29,6 +29,7 @@ public abstract class Checks {
                 new CheckEmptyPassword().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckInvalidEcdsa().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckJwkHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJkuHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             });
         });
     }

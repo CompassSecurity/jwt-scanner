@@ -21,7 +21,7 @@ public class CheckJwks extends Check {
     @Override
     public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        if (jwt.hasJku()) {
+        if (jwt.getJku().isPresent()) {
             return Optional.of(JwtAuditIssues.jkuDetected(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
         }
         var url = baseRequestResponse.request().url();

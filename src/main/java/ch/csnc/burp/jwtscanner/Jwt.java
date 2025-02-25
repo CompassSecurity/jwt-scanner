@@ -1,22 +1,17 @@
 package ch.csnc.burp.jwtscanner;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.ToNumberPolicy;
-
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static ch.csnc.burp.jwtscanner.Base64.*;
+import static ch.csnc.burp.jwtscanner.Gson.gson;
 
 /**
  * This class is designed to be immutable, meaning that its internal state should not be altered by any method calls.
@@ -35,11 +30,6 @@ public class Jwt {
     }
 
     public static final Pattern PATTERN = Pattern.compile("(ey[a-zA-Z0-9_=]+)\\.(ey[a-zA-Z0-9_=\\-]+)\\.([a-zA-Z0-9_\\-+/=]*)");
-
-    private static final Base64.Encoder base64UrlEncoder = Base64.getUrlEncoder().withoutPadding();
-    private static final Base64.Decoder base64UrlDecoder = Base64.getUrlDecoder();
-
-    private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
     private LinkedHashMap<String, Object> header;
     private LinkedHashMap<String, Object> payload;
@@ -64,9 +54,9 @@ public class Jwt {
 
     private static String encode(LinkedHashMap<String, Object> header, LinkedHashMap<String, Object> payload) {
         var headerJson = gson.toJson(header);
-        var headerBase64 = base64UrlEncoder.encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
+        var headerBase64 = base64UrlEncoderNoPadding.encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
         var payloadJson = gson.toJson(payload);
-        var payloadBase64 = base64UrlEncoder.encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
+        var payloadBase64 = base64UrlEncoderNoPadding.encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
         return "%s.%s".formatted(headerBase64, payloadBase64);
     }
 
@@ -99,41 +89,62 @@ public class Jwt {
         return false;
     }
 
-    public String getAlg() {
-        return this.header.getOrDefault("alg", "").toString();
+    public Optional<String> getAlg() {
+        var obj = this.header.get("alg");
+        if (obj == null) {
+            return Optional.empty();
+        }
+        if (obj instanceof String s) {
+            return Optional.of(s);
+        }
+        return Optional.empty();
     }
 
     public boolean hasSymmetricAlg() {
-        return switch (this.getAlg()) {
+        return this.getAlg().map(alg -> switch (alg) {
             case "HS256", "HS384", "HS512" -> true;
             default -> false;
-        };
+        }).orElse(false);
     }
 
     public boolean hasAsymmetricAlg() {
-        return switch (this.getAlg()) {
+        return this.getAlg().map(alg -> switch (alg) {
             case "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512" -> true;
             default -> false;
-        };
+        }).orElse(false);
     }
 
-    public String getJku() {
-        return this.header.getOrDefault("jku", "").toString();
+    public Optional<String> getJku() {
+        var jku = this.header.get("jku");
+        if (jku == null) {
+            return Optional.empty();
+        }
+        if (jku instanceof String s) {
+            return Optional.of(s);
+        }
+        return Optional.empty();
     }
 
-    public boolean hasJku() {
-        return !this.getJku().isEmpty();
+    public Optional<String> getJwk() {
+        var jwk = this.header.get("jwk");
+        if (jwk == null) {
+            return Optional.empty();
+        }
+        if (jwk instanceof String s) {
+            return Optional.of(s);
+        }
+        return Optional.empty();
     }
 
     public Jwt withRemovedSignature() {
-        return new Jwt.Builder(this).withSignature("").build();
+        return Jwt.newBuilder(this).withSignature("").build();
     }
 
     public Jwt withWrongSignature() {
         var chars = Arrays.asList(this.signature.split(""));
         Collections.shuffle(chars);
         var signature = String.join("", chars);
-        return new Jwt.Builder(this).withSignature(signature).build();
+        return Jwt.newBuilder(this).withSignature(signature).build();
     }
 
     public List<Jwt> withAlgNone() {
@@ -150,45 +161,47 @@ public class Jwt {
             }
             permutations.add(new String(perm));
         }
-        return permutations.stream().map(alg -> new Jwt.Builder(this).withHeader("alg", alg).withSignature("").build()).toList();
+        return permutations.stream().map(alg -> Jwt.newBuilder(this).withHeader("alg", alg).withSignature("").build()).toList();
     }
 
     public Jwt withEmptyPassword() {
-        return new Jwt.Builder(this).withHeader("alg", "HS256").withHS256Signature("").build();
+        return Jwt.newBuilder(this).withHeader("alg", "HS256").withHS256Signature("").build();
     }
 
     public Jwt withInvalidEcdsa() {
         // CVE-2022-21449
-        return new Jwt.Builder(this).withHeader("alg", "ES256").withSignature("MAYCAQACAQA").build();
+        return Jwt.newBuilder(this).withHeader("alg", "ES256").withSignature("MAYCAQACAQA").build();
     }
 
     public Jwt withInjectedJwkSelfSigned() {
-        try {
-            var privateKeyEncoded = JwtScannerExtension.apiAdapter().persistence().extensionData().getByteArray("privatekey");
-            var publicKeyEncoded = JwtScannerExtension.apiAdapter().persistence().extensionData().getByteArray("publickey");
-            if (privateKeyEncoded == null || publicKeyEncoded == null) {
-                var keyPairGen = KeyPairGenerator.getInstance("RSA");
-                keyPairGen.initialize(2048);
-                var keyPair = keyPairGen.generateKeyPair();
-                privateKeyEncoded = keyPair.getPrivate().getEncoded();
-                publicKeyEncoded = keyPair.getPublic().getEncoded();
-                JwtScannerExtension.apiAdapter().persistence().extensionData().setByteArray("privatekey", privateKeyEncoded);
-                JwtScannerExtension.apiAdapter().persistence().extensionData().setByteArray("publickey", publicKeyEncoded);
-            }
-            var keyFactory = KeyFactory.getInstance("RSA");
-            var privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyEncoded));
-            var publicKey = (RSAPublicKey) keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyEncoded));
-            var kid = UUID.randomUUID().toString();
-            var jwk = new LinkedHashMap<String, Object>();
-            jwk.put("kid", kid);
-            jwk.put("kty", "RSA");
-            jwk.put("e", base64UrlEncoder.encodeToString(publicKey.getPublicExponent().toByteArray()));
-            jwk.put("n", base64UrlEncoder.encodeToString(publicKey.getModulus().toByteArray()));
-            return new Jwt.Builder(this).withHeader("alg", "RS256").withHeader("kid", kid).withHeader("jwk", jwk).withRS256Signature(privateKey).build();
-        } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
-            throw new RuntimeException(exc);
-        }
+        var keyPair = RSA.getOrGenerateKeyPair();
+        var publicKey = (RSAPublicKey) keyPair.getPublic();
+        var kid = UUID.randomUUID().toString();
+        var jwk = new Jwk(kid, publicKey);
+        return Jwt.newBuilder(this)
+                .withHeader("alg", "RS256")
+                .withHeader("kid", kid)
+                .withHeader("jwk", jwk)
+                .withRS256Signature(keyPair.getPrivate())
+                .build();
+    }
+
+    public Jwt withInjectedJkuSelfSigned() {
+        var keyPair = RSA.getOrGenerateKeyPair();
+        var publicKey = (RSAPublicKey) keyPair.getPublic();
+        var kid = UUID.randomUUID().toString();
+        var jwk = new Jwk(kid, publicKey);
+        var jwks = new LinkedHashMap<String, Object>();
+        jwks.put("keys", List.of(jwk));
+        var jwksJson = gson.toJson(jwks);
+        var jwksBase64 = base64UrlEncoderWithPadding.encodeToString(jwksJson.getBytes(StandardCharsets.UTF_8));
+        var jku = "https://httpbin.org/base64/%s".formatted(jwksBase64);
+        return Jwt.newBuilder(this)
+                .withHeader("alg", "RS256")
+                .withHeader("kid", kid)
+                .withHeader("jku", jku)
+                .withRS256Signature(keyPair.getPrivate())
+                .build();
     }
 
     @Override
@@ -217,6 +230,10 @@ public class Jwt {
         return new Builder(encodedJwt);
     }
 
+    public static Builder newBuilder(Jwt jwt) {
+        return new Builder(jwt);
+    }
+
     public static class Builder {
 
         private LinkedHashMap<String, Object> header;
@@ -237,12 +254,17 @@ public class Jwt {
             });
         }
 
-        public Builder(Jwt jwt) {
+        private Builder(Jwt jwt) {
             this(jwt.encode());
         }
 
         public Builder withHeader(String key, Object value) {
             this.header.put(key, value);
+            return this;
+        }
+
+        public Builder removeHeader(String key) {
+            this.header.remove(key);
             return this;
         }
 
@@ -278,7 +300,7 @@ public class Jwt {
                 var mac = Mac.getInstance("HmacSHA256");
                 mac.init(secretKeySpec);
                 var signatureBytes = mac.doFinal(headerPayload.getBytes(StandardCharsets.UTF_8));
-                this.signature = base64UrlEncoder.encodeToString(signatureBytes);
+                this.signature = base64UrlEncoderNoPadding.encodeToString(signatureBytes);
                 return this;
             } catch (Exception exc) {
                 JwtScannerExtension.apiAdapter().logging().logToError(exc);
@@ -292,7 +314,7 @@ public class Jwt {
                 var signer = Signature.getInstance("SHA256withRSA");
                 signer.initSign(privateKey);
                 signer.update(headerPayload.getBytes(StandardCharsets.UTF_8));
-                this.signature = base64UrlEncoder.encodeToString(signer.sign());
+                this.signature = base64UrlEncoderNoPadding.encodeToString(signer.sign());
                 return this;
             } catch (Exception exc) {
                 JwtScannerExtension.apiAdapter().logging().logToError(exc);

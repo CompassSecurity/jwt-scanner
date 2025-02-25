@@ -64,7 +64,7 @@ public abstract class JwtAuditIssues {
     public static AuditIssue unknownAlg(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         var alg = jwt.getAlg();
         return auditIssue(
-                "JWT has unknown Algorithm",
+                "JWT has unknown algorithm",
                 "alg: %s".formatted(alg),
                 "",
                 baseRequestResponse.request().url(),
@@ -257,9 +257,22 @@ public abstract class JwtAuditIssues {
     }
 
     public static AuditIssue jwkHeaderInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
-        return auditIssue("JWT JWKs Injection",
+        return auditIssue("JWT jwk header injection",
                 "It is possible to include the used public key in the JWK value of the header. The Application takes the included public key to validate the signature",
                 "The JWK provided in the header should not be used to validate the signature.",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue jkuHeaderInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue("JWT jku header injection",
+                "JWT JKU header injection is a vulnerability where an attacker can manipulate the jku (JSON Web Key Set URL) header to point to a malicious key set, enabling them to forge or alter JWTs.",
+                "To remediate this, implement strict validation of the jku value by whitelisting trusted key sources and ensuring that any keys fetched are from secure, verified endpoints.",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
                 confidence,
