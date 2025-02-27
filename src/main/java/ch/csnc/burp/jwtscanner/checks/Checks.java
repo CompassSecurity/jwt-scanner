@@ -27,6 +27,7 @@ public abstract class Checks {
                 // invalid signature is not accepted.
                 new CheckAlgNone().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckEmptyPassword().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckKidHeaderPathTraversal().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckInvalidEcdsa().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckJwkHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckJkuHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);

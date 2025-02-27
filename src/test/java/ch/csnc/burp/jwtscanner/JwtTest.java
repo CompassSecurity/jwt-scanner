@@ -181,4 +181,11 @@ public class JwtTest {
         assertThat(jwt.getJku().orElseThrow(), equalTo(url));
     }
 
+    @Test
+    void withKidPointingToDevNull() {
+        var encodedJwt = "eyJraWQiOiI1YzQ0M2FhZi1jYjk0LTQ0YTgtYWIxZi04NmY1Y2I5MDU5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsImV4cCI6MTc0MDQ5OTQ1NSwic3ViIjoid2llbmVyIn0.OnF1LKx4G-s12KFGVQ84qQGTU9amOg11w3syquuEipY";
+        var jwt = new Jwt(encodedJwt).withKidPointingToDevNull();
+        assertThat(jwt.getKid().orElseThrow(), equalTo("../../../../../../../../../../../dev/null"));
+    }
+
 }

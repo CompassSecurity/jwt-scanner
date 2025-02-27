@@ -19,7 +19,7 @@ import static burp.api.montoya.core.ByteArray.byteArray;
 
 public abstract class Check {
 
-    protected static final double SIMILARITY_THRESHOLD = 0.9;
+    protected static final double SIMILARITY_THRESHOLD = 0.8;
 
     public abstract Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
 
