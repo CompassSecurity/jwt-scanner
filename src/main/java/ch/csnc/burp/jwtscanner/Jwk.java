@@ -26,7 +26,7 @@ public class Jwk {
         keyValues.put("n", base64UrlEncoderNoPadding.encodeToString(publicKey.getModulus().toByteArray()));
     }
 
-    private Jwk(Map<String, Object> keyValues) {
+    Jwk(Map<String, Object> keyValues) {
         this.keyValues.putAll(keyValues);
     }
 
@@ -74,6 +74,11 @@ public class Jwk {
             return new Jwk(keyValues);
         }
 
+    }
+
+    @Override
+    public String toString() {
+        return gson.toJson(this);
     }
 
 }

@@ -90,10 +90,25 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
+
+    public static AuditIssue jwkInHeaderDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue(
+                "JSON Web Key in header detected",
+                "jwk: %s".formatted(jwt.getJwk().orElseThrow()),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
     public static AuditIssue jkuDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue(
                 "JSON Web Key Sets detected",
-                "jku: %s".formatted(jwt.getJku()),
+                "jku: %s".formatted(jwt.getJku().orElseThrow()),
                 "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
@@ -183,7 +198,7 @@ public abstract class JwtAuditIssues {
     }
 
     public static AuditIssue algNone(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
-        return auditIssue("Algorithm none JWT attack",
+        return auditIssue("JWT algorithm %s attack".formatted(jwt.getAlg().orElseThrow()),
                 """
                         The server accepts JWTs created with the "none" algorithm.
                         The JWT ànoneà algorithm is a waz of creating a JWT without adding a signature.
@@ -193,6 +208,21 @@ public abstract class JwtAuditIssues {
                         The server should not accept tokens that were created using the "none" algorithm.
                         (Note that upper- and lower-case variations such as "None" or "nONe" must not be accepted either.)
                         The server should ignore the "alg" header claim and instead define a fixed signature algorithm in the application code.""",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+    public static AuditIssue algConfusion(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue("JWT algorithm confusion attack",
+                """
+                        Public key:
+                        %s""".formatted(Rsa.retrievePublicKeyOfJwk().map(Rsa::publicKeyToPem).orElseThrow()),
+                "", // todo
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
                 confidence,

@@ -13,11 +13,14 @@ import java.util.function.Consumer;
 public abstract class Checks {
 
     public static void performAll(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Consumer<AuditIssue> auditIssueConsumer) {
-        new CheckJwtExists().check(baseRequestResponse, auditInsertionPoint).ifPresent((auditIssue) -> {
-            auditIssueConsumer.accept(auditIssue);
+        new CheckJwtExists().check(baseRequestResponse, auditInsertionPoint).ifPresent(jwtExistsIssue -> {
+            auditIssueConsumer.accept(jwtExistsIssue);
             // Further checks only make sense if the JWT exists.
             new CheckAlg().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckJwks().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckJwks().check(baseRequestResponse, auditInsertionPoint).ifPresent(jwksDetectedIssue -> {
+                auditIssueConsumer.accept(jwksDetectedIssue);
+                new CheckAlgorithmConfusion().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            });
             new CheckJwtExpired().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckExpiredJwtAccepted().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckWithoutSignature().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);

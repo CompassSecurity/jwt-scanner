@@ -22,6 +22,11 @@ public class CheckJwks extends Check {
     public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
 
+        if (jwt.getJwk().isPresent()) {
+            this.handleJwk(jwt.getJwk().get());
+            return Optional.of(JwtAuditIssues.jwkInHeaderDetected(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
+        }
+
         if (jwt.getJku().isPresent()) {
             this.handleUrlToJwks(jwt, jwt.getJku().get());
             return Optional.of(JwtAuditIssues.jkuDetected(jwt, AuditIssueConfidence.FIRM, baseRequestResponse));
@@ -55,8 +60,12 @@ public class CheckJwks extends Check {
         var response = requestResponse.response();
         if (response.statusCode() == 200) {
             var jwks = gson.fromJson(response.bodyToString(), Jwks.class);
-            jwt.getKid().flatMap(jwks::forKid).ifPresent(Rsa::storePubicKeyOfJwk);
+            jwt.getKid().flatMap(jwks::forKid).ifPresent(this::handleJwk);
         }
+    }
+
+    private void handleJwk(Jwk jwk) {
+       Rsa.storePubicKeyOfJwk(jwk);
     }
 
 }

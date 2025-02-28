@@ -122,6 +122,21 @@ public class Jwt {
         return this.getHeaderAsString("kid");
     }
 
+    public Optional<Jwk> getJwk() {
+        var jwk = this.header.get("jwk");
+        if (jwk == null) {
+            return Optional.empty();
+        }
+        try {
+            // looking silly?
+            var json = gson.toJson(jwk);
+            return Optional.of(gson.fromJson(json, Jwk.class));
+        } catch (Exception exc) {
+            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            return Optional.empty();
+        }
+    }
+
     private Optional<String> getHeaderAsString(String key) {
         var value = this.header.get(key);
         if (value == null) {
@@ -298,7 +313,8 @@ public class Jwt {
                 };
                 var mac = Mac.getInstance("HmacSHA256");
                 mac.init(secretKeySpec);
-                var signatureBytes = mac.doFinal(headerPayload.getBytes(StandardCharsets.UTF_8));
+                mac.update(headerPayload.getBytes(StandardCharsets.UTF_8));
+                var signatureBytes = mac.doFinal();
                 this.signature = base64UrlEncoderNoPadding.encodeToString(signatureBytes);
                 return this;
             } catch (Exception exc) {
