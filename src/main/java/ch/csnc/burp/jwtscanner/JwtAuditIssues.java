@@ -310,4 +310,18 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
+    public static AuditIssue internalServerError(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue("JWT 500 Internal Server Error",
+                "The server responded with status code 500 (Internal Server Error). It might be worthwhile to have a closer look at it.",
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.LOW,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.LOW,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
+
 }
