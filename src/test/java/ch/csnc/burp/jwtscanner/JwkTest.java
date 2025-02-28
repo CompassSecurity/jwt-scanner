@@ -1,6 +1,5 @@
 package ch.csnc.burp.jwtscanner;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.security.interfaces.RSAPublicKey;
@@ -14,7 +13,7 @@ public class JwkTest {
 
     @Test
     void testSerializeToJson() {
-        var keyPair = RSA.getOrGenerateKeyPair();
+        var keyPair = Rsa.getOrGenerateKeyPair();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, (RSAPublicKey) keyPair.getPublic());
         var json = gson.toJson(jwk);
