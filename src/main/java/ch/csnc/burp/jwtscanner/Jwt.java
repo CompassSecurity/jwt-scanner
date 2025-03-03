@@ -51,13 +51,13 @@ public class Jwt {
         consumer.accept(header, payload, signature);
     }
 
+    private static String encode(LinkedHashMap<String, Object> map) {
+        var json = gson.toJson(map);
+        return base64UrlEncoderNoPadding.encodeToString(json.getBytes(StandardCharsets.UTF_8));
+    }
 
     private static String encode(LinkedHashMap<String, Object> header, LinkedHashMap<String, Object> payload) {
-        var headerJson = gson.toJson(header);
-        var headerBase64 = base64UrlEncoderNoPadding.encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
-        var payloadJson = gson.toJson(payload);
-        var payloadBase64 = base64UrlEncoderNoPadding.encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
-        return "%s.%s".formatted(headerBase64, payloadBase64);
+        return "%s.%s".formatted(encode(header), encode(payload));
     }
 
     private static String encode(LinkedHashMap<String, Object> header, LinkedHashMap<String, Object> payload, String signature) {
@@ -146,6 +146,18 @@ public class Jwt {
             return Optional.of(s);
         }
         return Optional.empty();
+    }
+
+    public String encodedHeader() {
+        return encode(this.header);
+    }
+
+    public String encodedPayload() {
+        return encode(this.payload);
+    }
+
+    public String encodedSignature() {
+        return this.signature;
     }
 
     public Jwt withRemovedSignature() {

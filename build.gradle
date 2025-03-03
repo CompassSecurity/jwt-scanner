@@ -21,7 +21,7 @@ configurations {
 dependencies {
     compileOnly libs.net.portswigger.burp.extensions.montoya.api
 
-    implementation(libs.com.google.code.gson.gson)
+    implementation libs.com.google.code.gson.gson
 
     testImplementation libs.net.portswigger.burp.extensions.montoya.api
     testImplementation libs.org.hamcrest.hamcrest.all
@@ -46,6 +46,7 @@ jar {
 
 test {
     jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    jvmArgs += "-Djava.library.path=${projectDir}/native"
     enableAssertions = true
     useJUnitPlatform()
 }

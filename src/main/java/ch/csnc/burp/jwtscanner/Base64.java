@@ -1,7 +1,5 @@
 package ch.csnc.burp.jwtscanner;
 
-import java.util.Base64.*;
-
 import static java.util.Base64.*;
 
 public abstract class Base64 {

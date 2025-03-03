@@ -1,10 +1,12 @@
 package ch.csnc.burp.jwtscanner;
 
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -77,6 +79,20 @@ public abstract class Rsa {
         }
         pemBuilder.append("-----END PUBLIC KEY-----\n");
         return pemBuilder.toString();
+    }
+
+    public static Optional<RSAPublicKey> publicKeyOf(BigInteger n, BigInteger e) {
+        try {
+            var spec = new RSAPublicKeySpec(n, e);
+            var keyFactory = KeyFactory.getInstance("RSA");
+            return Optional.of((RSAPublicKey) keyFactory.generatePublic(spec));
+        } catch (InvalidKeySpecException exc) {
+            // RSA keys must be at least 512 bits long
+            return Optional.empty();
+        } catch (Exception exc) {
+            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            throw new RuntimeException(exc);
+        }
     }
 
 }
