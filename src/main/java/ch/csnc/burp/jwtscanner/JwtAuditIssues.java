@@ -221,7 +221,7 @@ public abstract class JwtAuditIssues {
         return auditIssue("JWT algorithm confusion attack",
                 """
                         Public key:
-                        %s""".formatted(Rsa.retrievePublicKeyOfJwk().map(Rsa::publicKeyToPem).orElseThrow()),
+                        %s""".formatted(JwtScannerExtension.storage().getJwk().map(Rsa::publicKeyOf).map(Rsa::publicKeyToPem).orElseThrow()),
                 "", // todo
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,

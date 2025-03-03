@@ -74,14 +74,14 @@ public class Sign2n {
                         break;
                     }
                     if (new BigInteger(gmp.powm(sig1.toString(), String.valueOf(e), n.toString())).equals(m1)) {
-                        Rsa.publicKeyOf(n, BigInteger.valueOf(e)).ifPresent(publicKeys::add);
+                        publicKeys.add(Rsa.publicKeyOf(n, BigInteger.valueOf(e)));
                     }
                 }
             }
 
             return List.copyOf(publicKeys);
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);
         }
     }
@@ -96,7 +96,7 @@ public class Sign2n {
             }
             return pkcs1Padding(sizeBytes, hex.toString(), hashAlgorithm);
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);
         }
     }

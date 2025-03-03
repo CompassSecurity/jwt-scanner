@@ -132,7 +132,7 @@ public class Jwt {
             var json = gson.toJson(jwk);
             return Optional.of(gson.fromJson(json, Jwk.class));
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             return Optional.empty();
         }
     }
@@ -205,7 +205,7 @@ public class Jwt {
     }
 
     public Jwt withInjectedJwkSelfSigned() {
-        var keyPair = Rsa.getOrGenerateKeyPair();
+        var keyPair = Rsa.generateKeyPair();
         var publicKey = (RSAPublicKey) keyPair.getPublic();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, publicKey);
@@ -218,7 +218,7 @@ public class Jwt {
     }
 
     public Jwt withInjectedJkuSelfSigned() {
-        var keyPair = Rsa.getOrGenerateKeyPair();
+        var keyPair = Rsa.generateKeyPair();
         var publicKey = (RSAPublicKey) keyPair.getPublic();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, publicKey);
@@ -330,7 +330,7 @@ public class Jwt {
                 this.signature = base64UrlEncoderNoPadding.encodeToString(signatureBytes);
                 return this;
             } catch (Exception exc) {
-                JwtScannerExtension.apiAdapter().logging().logToError(exc);
+                JwtScannerExtension.logging().logToError(exc);
                 throw new RuntimeException(exc);
             }
         }
@@ -344,7 +344,7 @@ public class Jwt {
                 this.signature = base64UrlEncoderNoPadding.encodeToString(signer.sign());
                 return this;
             } catch (Exception exc) {
-                JwtScannerExtension.apiAdapter().logging().logToError(exc);
+                JwtScannerExtension.logging().logToError(exc);
                 throw new RuntimeException(exc);
             }
         }

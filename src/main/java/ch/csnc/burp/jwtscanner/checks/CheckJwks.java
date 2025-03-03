@@ -65,7 +65,7 @@ public class CheckJwks extends Check {
     }
 
     private void handleJwk(Jwk jwk) {
-       Rsa.storePubicKeyOfJwk(jwk);
+        JwtScannerExtension.storage().putJwk(jwk);
     }
 
 }

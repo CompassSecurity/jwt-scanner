@@ -6,64 +6,41 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Optional;
 
 import static ch.csnc.burp.jwtscanner.Base64.base64EncoderWithPadding;
 
 public abstract class Rsa {
 
-    public static KeyPair getOrGenerateKeyPair() {
+    public static KeyPair generateKeyPair() {
         try {
-            var privateKeyEncoded = JwtScannerExtension.apiAdapter().persistence().extensionData().getByteArray("selfSignedPrivateKey");
-            var publicKeyEncoded = JwtScannerExtension.apiAdapter().persistence().extensionData().getByteArray("selfSignedPublicKey");
-            if (privateKeyEncoded == null || publicKeyEncoded == null) {
-                var keyPairGen = KeyPairGenerator.getInstance("RSA");
-                keyPairGen.initialize(2048);
-                var keyPair = keyPairGen.generateKeyPair();
-                privateKeyEncoded = keyPair.getPrivate().getEncoded();
-                publicKeyEncoded = keyPair.getPublic().getEncoded();
-                JwtScannerExtension.apiAdapter().persistence().extensionData().setByteArray("selfSignedPrivateKey", privateKeyEncoded);
-                JwtScannerExtension.apiAdapter().persistence().extensionData().setByteArray("selfSignedPublicKey", publicKeyEncoded);
-            }
-            var keyFactory = KeyFactory.getInstance("RSA");
-            var privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyEncoded));
-            var publicKey = (RSAPublicKey) keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyEncoded));
-            return new KeyPair(publicKey, privateKey);
+            var keyPairGen = KeyPairGenerator.getInstance("RSA");
+            keyPairGen.initialize(2048);
+            return keyPairGen.generateKeyPair();
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);
         }
     }
 
-    public static void storePubicKeyOfJwk(Jwk jwk) {
+    public static RSAPublicKey publicKeyOf(Jwk jwk) {
         try {
             var modulus = jwk.modulusBigInt();
             var exponent = jwk.exponentBigInt();
-            var spec = new RSAPublicKeySpec(modulus, exponent);
-            var keyFactory = KeyFactory.getInstance("RSA");
-            var publicKey = keyFactory.generatePublic(spec);
-            JwtScannerExtension.apiAdapter().persistence().extensionData().setByteArray("jwkPublicKey", publicKey.getEncoded());
+            return publicKeyOf(modulus, exponent);
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);
         }
     }
 
-    public static Optional<RSAPublicKey> retrievePublicKeyOfJwk() {
+    public static RSAPublicKey publicKeyOf(BigInteger n, BigInteger e) {
         try {
+            var spec = new RSAPublicKeySpec(n, e);
             var keyFactory = KeyFactory.getInstance("RSA");
-            var publicKeyEncoded = JwtScannerExtension.apiAdapter().persistence().extensionData().getByteArray("jwkPublicKey");
-            if (publicKeyEncoded == null) {
-                return Optional.empty();
-            }
-            var publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyEncoded));
-            return Optional.of((RSAPublicKey) publicKey);
+            return (RSAPublicKey) keyFactory.generatePublic(spec);
         } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
+            JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);
         }
     }
@@ -79,20 +56,6 @@ public abstract class Rsa {
         }
         pemBuilder.append("-----END PUBLIC KEY-----\n");
         return pemBuilder.toString();
-    }
-
-    public static Optional<RSAPublicKey> publicKeyOf(BigInteger n, BigInteger e) {
-        try {
-            var spec = new RSAPublicKeySpec(n, e);
-            var keyFactory = KeyFactory.getInstance("RSA");
-            return Optional.of((RSAPublicKey) keyFactory.generatePublic(spec));
-        } catch (InvalidKeySpecException exc) {
-            // RSA keys must be at least 512 bits long
-            return Optional.empty();
-        } catch (Exception exc) {
-            JwtScannerExtension.apiAdapter().logging().logToError(exc);
-            throw new RuntimeException(exc);
-        }
     }
 
 }

@@ -13,7 +13,7 @@ public class JwkTest {
 
     @Test
     void testSerializeToJson() {
-        var keyPair = Rsa.getOrGenerateKeyPair();
+        var keyPair = Rsa.generateKeyPair();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, (RSAPublicKey) keyPair.getPublic());
         var json = gson.toJson(jwk);

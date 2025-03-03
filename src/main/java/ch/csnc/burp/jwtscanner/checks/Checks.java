@@ -19,7 +19,7 @@ public abstract class Checks {
             new CheckAlg().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckJwks().check(baseRequestResponse, auditInsertionPoint).ifPresent(jwksDetectedIssue -> {
                 auditIssueConsumer.accept(jwksDetectedIssue);
-                new CheckAlgorithmConfusion().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckAlgConfusion().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             });
             new CheckJwtExpired().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckExpiredJwtAccepted().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
