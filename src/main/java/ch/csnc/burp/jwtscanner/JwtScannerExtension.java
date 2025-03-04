@@ -1,6 +1,7 @@
 package ch.csnc.burp.jwtscanner;
 
 import burp.api.montoya.MontoyaApi;
+import org.scijava.nativelib.NativeLoader;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -28,6 +29,9 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
 
     @Override
     public void initialize(MontoyaApi api) {
+        // todo remove
+        new Gmp();
+
         JwtScannerExtension.api = api;
         JwtScannerExtension.logging = new Logging(api);
         JwtScannerExtension.storage = new Storage();

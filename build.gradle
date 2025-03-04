@@ -22,11 +22,11 @@ dependencies {
     compileOnly libs.net.portswigger.burp.extensions.montoya.api
 
     implementation libs.com.google.code.gson.gson
+    implementation libs.org.scijava.native.lib.loader
 
     testImplementation libs.net.portswigger.burp.extensions.montoya.api
     testImplementation libs.org.hamcrest.hamcrest.all
     testImplementation libs.org.junit.jupiter
-    testImplementation libs.org.slf4j.slf4j.simple
     testImplementation libs.org.mockito.mockito.core
 
     mockitoAgent(libs.org.mockito.mockito.core) { transitive = false }

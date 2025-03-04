@@ -1,9 +1,20 @@
 package ch.csnc.burp.jwtscanner;
 
+import org.scijava.nativelib.NativeLoader;
+
 public class Gmp {
 
     static {
-        System.loadLibrary("gmpwrapper");
+        try {
+            System.loadLibrary("gmpwrapper");
+        } catch (Exception exc1) {
+            try {
+                NativeLoader.loadLibrary("gmpwrapper");
+            } catch (Exception exc2) {
+                JwtScannerExtension.logging().logToError(exc2);
+                throw new RuntimeException(exc2);
+            }
+        }
     }
 
     public native String sub(String a, String b);
