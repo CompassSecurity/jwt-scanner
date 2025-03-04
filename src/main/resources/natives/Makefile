@@ -5,5 +5,4 @@ default:
 
 .PHONY: linux_64
 linux_64:
-	cc -Wall -Werror -shared -o linux_64/libgmpwrapper.so -I"${JAVA_HOME}/include" -I"${JAVA_HOME}/include/linux" -lgmp gmpwrapper.c
-	
+	cc -Wall -Werror -shared -o linux_64/libgmpwrapper.so -I"${JAVA_HOME}/include" -I"${JAVA_HOME}/include/linux" gmpwrapper.c ./linux_64/libgmp.a
