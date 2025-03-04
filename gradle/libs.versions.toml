@@ -5,6 +5,7 @@ org-hamcrest-hamcrest-all = "1.3"
 org-junit-jupiter = "5.10.2"
 org-mockito-mockito-core = "5.15.2"
 org-scijava-native-lib-loader = "2.5.0"
+org-slf4j-slf4j-simple = "2.0.17"
 
 [libraries]
 com-google-code-gson-gson = { module = "com.google.code.gson:gson", version.ref = "com-google-code-gson-gson" }
@@ -13,3 +14,5 @@ org-hamcrest-hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref 
 org-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "org-junit-jupiter" }
 org-mockito-mockito-core = { module = "org.mockito:mockito-core", version.ref = "org-mockito-mockito-core" }
 org-scijava-native-lib-loader = { module = "org.scijava:native-lib-loader", version.ref = "org-scijava-native-lib-loader" }
+org-slf4j-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "org-slf4j-slf4j-simple" }
+

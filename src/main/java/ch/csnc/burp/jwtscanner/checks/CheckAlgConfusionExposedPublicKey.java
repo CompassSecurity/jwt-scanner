@@ -19,12 +19,13 @@ import java.util.Optional;
 public class CheckAlgConfusionExposedPublicKey extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         return JwtScannerExtension.storage().getJwk()
                 .map(Rsa::publicKeyOf)
+                .map(JwtScannerExtension.storage()::putPublicKeyForAlgConfusion)
                 .map(Rsa::publicKeyToPem)
                 .map(secret -> Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("alg", "HS256").withHS256Signature(secret).build())
-                .flatMap(jwt -> check(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion));
+                .flatMap(jwt -> perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion));
     }
 
 }

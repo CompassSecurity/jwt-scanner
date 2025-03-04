@@ -11,10 +11,10 @@ import java.util.Optional;
 public class CheckExpiredJwtAccepted extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         if (jwt.isExpired()) {
-            return check(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::expiredAccepted);
+            return perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::expiredAccepted);
         }
         return Optional.empty();
     }

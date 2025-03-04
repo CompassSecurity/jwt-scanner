@@ -29,7 +29,7 @@ public abstract class JwtAuditIssues {
     }
 
     public static AuditIssue hasSymmetricAlg(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
-        var alg = jwt.getAlg();
+        var alg = jwt.getAlg().orElseThrow();
         return auditIssue(
                 "JWT is signed symmetrically",
                 """
@@ -222,8 +222,13 @@ public abstract class JwtAuditIssues {
     public static AuditIssue algConfusion(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT algorithm confusion attack",
                 """
-                        Public key:
-                        %s""".formatted(JwtScannerExtension.storage().getJwk().map(Rsa::publicKeyOf).map(Rsa::publicKeyToPem).orElseThrow()),
+                        <p>
+                            Alg: %s
+                        </p>
+                        <p>
+                            Secret:<br>
+                            <pre>%s</pre>
+                        </p>""".formatted(jwt.getAlg().orElseThrow(), JwtScannerExtension.storage().getPublicKeyForAlgConfusion().map(Rsa::publicKeyToPem).orElseThrow()),
                 "", // todo
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
@@ -288,7 +293,7 @@ public abstract class JwtAuditIssues {
                         the server to use an arbitrary file from its filesystem as the verification key.
                         """,
                 """
-                        Validate the "kid" header against a predefined whitelist of acceptable key IDs and avoid using 
+                        Validate the "kid" header against a predefined whitelist of acceptable key IDs and avoid using
                         user-controlled input to select keys.""",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
@@ -358,21 +363,25 @@ public abstract class JwtAuditIssues {
     public static AuditIssue forgedPublicKeys(HttpRequestResponse baseRequestResponse, Jwt jwt1, Jwt jwt2, List<RSAPublicKey> publicKeys) {
         return auditIssue("JWT public key successfully forged",
                 """
-                        JWT 1:
-                        %s
-                        
-                        JWT 2:
-                        %s
-                        
-                        Forged public keys:
-                        %s""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(Rsa::publicKeyToPem).collect(Collectors.joining("\n"))),
+                        <p>
+                            JWT 1:<br>
+                            <pre>%s</pre>
+                        </p>
+                        <p>
+                            JWT 2:<br>
+                            <pre>%s</pre>
+                        </p>
+                        <p>
+                            Forged public keys:<br>
+                            <pre>%s</pre>
+                        </p>""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(Rsa::publicKeyToPem).collect(Collectors.joining("<br>"))),
                 "",
                 baseRequestResponse.request().url(),
-                AuditIssueSeverity.INFORMATION,
+                AuditIssueSeverity.MEDIUM,
                 AuditIssueConfidence.FIRM,
                 null,
                 null,
-                AuditIssueSeverity.INFORMATION,
+                AuditIssueSeverity.MEDIUM,
                 List.of());
     }
 }

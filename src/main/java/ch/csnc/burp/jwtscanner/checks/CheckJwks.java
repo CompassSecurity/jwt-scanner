@@ -19,7 +19,7 @@ import static ch.csnc.burp.jwtscanner.Gson.gson;
 public class CheckJwks extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
 
         if (jwt.getJwk().isPresent()) {

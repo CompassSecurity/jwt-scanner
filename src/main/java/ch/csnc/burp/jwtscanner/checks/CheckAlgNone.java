@@ -14,10 +14,10 @@ import java.util.Optional;
 public class CheckAlgNone extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         for (var jwtWithAlgNone : jwt.withAlgNone()) {
-            var auditIssue = check(baseRequestResponse, auditInsertionPoint, jwtWithAlgNone, JwtAuditIssues::algNone);
+            var auditIssue = perform(baseRequestResponse, auditInsertionPoint, jwtWithAlgNone, JwtAuditIssues::algNone);
             if (auditIssue.isPresent()) {
                 return auditIssue;
             }

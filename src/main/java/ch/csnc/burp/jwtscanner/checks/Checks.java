@@ -13,27 +13,30 @@ import java.util.function.Consumer;
 public abstract class Checks {
 
     public static void performAll(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Consumer<AuditIssue> auditIssueConsumer) {
-        new CheckJwtExists().check(baseRequestResponse, auditInsertionPoint).ifPresent(jwtExistsIssue -> {
+        new CheckJwtExists().perform(baseRequestResponse, auditInsertionPoint).ifPresent(jwtExistsIssue -> {
             auditIssueConsumer.accept(jwtExistsIssue);
             // Further checks only make sense if the JWT exists.
-            new CheckAlg().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckJwks().check(baseRequestResponse, auditInsertionPoint).ifPresent(jwksDetectedIssue -> {
+            new CheckAlg().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckJwks().perform(baseRequestResponse, auditInsertionPoint).ifPresentOrElse(jwksDetectedIssue -> {
                 auditIssueConsumer.accept(jwksDetectedIssue);
-                new CheckAlgConfusionExposedPublicKey().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckAlgConfusionExposedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            }, () -> {
+                // If no public key is exposed, it should be checked whether a forged public key can be used.
+                new CheckAlgConfusionForgedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             });
-            new CheckJwtExpired().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckExpiredJwtAccepted().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckWithoutSignature().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckInvalidSignature().check(baseRequestResponse, auditInsertionPoint).ifPresentOrElse(auditIssueConsumer, () -> {
+            new CheckJwtExpired().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckExpiredJwtAccepted().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckWithoutSignature().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+            new CheckInvalidSignature().perform(baseRequestResponse, auditInsertionPoint).ifPresentOrElse(auditIssueConsumer, () -> {
                 // If a JWT is accepted with an invalid signature, further attacks, such as algorithm confusion attacks,
                 // should not be attempted, as they will succeed regardless. Thus this block is only executed, if a JWT with
                 // invalid signature is not accepted.
-                new CheckAlgNone().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckEmptyPassword().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckKidHeaderPathTraversal().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckInvalidEcdsa().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckJwkHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-                new CheckJkuHeaderInjection().check(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckAlgNone().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckEmptyPassword().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckKidHeaderPathTraversal().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckInvalidEcdsa().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJwkHeaderInjection().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJkuHeaderInjection().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             });
         });
     }

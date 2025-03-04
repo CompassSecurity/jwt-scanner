@@ -28,6 +28,7 @@ dependencies {
     testImplementation libs.org.hamcrest.hamcrest.all
     testImplementation libs.org.junit.jupiter
     testImplementation libs.org.mockito.mockito.core
+    testImplementation libs.org.slf4j.slf4j.simple
 
     mockitoAgent(libs.org.mockito.mockito.core) { transitive = false }
 }
@@ -46,7 +47,6 @@ jar {
 
 test {
     jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
-    jvmArgs += "-Djava.library.path=${projectDir}/native"
     enableAssertions = true
     useJUnitPlatform()
 }

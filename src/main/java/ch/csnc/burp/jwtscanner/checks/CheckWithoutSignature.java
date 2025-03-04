@@ -14,9 +14,9 @@ import java.util.Optional;
 public class CheckWithoutSignature extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return check(baseRequestResponse, auditInsertionPoint, jwt.withRemovedSignature(), JwtAuditIssues::withoutSignature);
+        return perform(baseRequestResponse, auditInsertionPoint, jwt.withRemovedSignature(), JwtAuditIssues::withoutSignature);
     }
 
 }

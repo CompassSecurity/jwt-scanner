@@ -14,9 +14,9 @@ import java.util.Optional;
 public class CheckKidHeaderPathTraversal extends Check {
 
     @Override
-    public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue()).withKidPointingToDevNull();
-        return check(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::kidHeaderPathTraversal);
+        return perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::kidHeaderPathTraversal);
     }
 
 }

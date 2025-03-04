@@ -22,9 +22,9 @@ public abstract class Check {
 
     protected static final double SIMILARITY_THRESHOLD = 0.8;
 
-    public abstract Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
+    public abstract Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
 
-    protected Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Jwt jwt, JwtAuditIssue jwtAuditIssue) {
+    protected Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Jwt jwt, JwtAuditIssue jwtAuditIssue) {
         var payload = byteArray(jwt.encode());
         var checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
