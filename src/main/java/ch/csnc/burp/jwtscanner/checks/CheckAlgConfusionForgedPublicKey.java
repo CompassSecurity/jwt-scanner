@@ -12,17 +12,26 @@ import java.util.Optional;
 
 /**
  * Changes the algorithm from asymmetric (RS256) to symmetric
- * (HS256) and signs the JWT with the public key (base64 encoded PEM).
+ * (HS256) and signs the JWT with the public key.
+ * <p>
+ * This uses a forged public keys. To forge public keys.
  */
-public class CheckAlgConfusion extends Check {
+public class CheckAlgConfusionForgedPublicKey extends Check {
 
     @Override
     public Optional<AuditIssue> check(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
-        return JwtScannerExtension.storage().getJwk()
-                .map(Rsa::publicKeyOf)
+        var jwts = JwtScannerExtension.storage().getForgedPublicKeys()
+                .stream()
                 .map(Rsa::publicKeyToPem)
                 .map(secret -> Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("alg", "HS256").withHS256Signature(secret).build())
-                .flatMap(jwt -> check(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion));
+                .toList();
+        for (var jwt : jwts) {
+            var auditIssue = check(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion);
+            if (auditIssue.isPresent()) {
+                return auditIssue;
+            }
+        }
+        return Optional.empty();
     }
 
 }

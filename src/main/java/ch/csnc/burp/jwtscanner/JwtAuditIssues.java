@@ -5,9 +5,11 @@ import burp.api.montoya.scanner.audit.issues.AuditIssue;
 import burp.api.montoya.scanner.audit.issues.AuditIssueConfidence;
 import burp.api.montoya.scanner.audit.issues.AuditIssueSeverity;
 
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static burp.api.montoya.scanner.audit.issues.AuditIssue.auditIssue;
 
@@ -353,5 +355,24 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
-
+    public static AuditIssue forgedPublicKeys(HttpRequestResponse baseRequestResponse, Jwt jwt1, Jwt jwt2, List<RSAPublicKey> publicKeys) {
+        return auditIssue("JWT public key successfully forged",
+                """
+                        JWT 1:
+                        %s
+                        
+                        JWT 2:
+                        %s
+                        
+                        Forged public keys:
+                        %s""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(Rsa::publicKeyToPem).collect(Collectors.joining("\n"))),
+                "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.INFORMATION,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.INFORMATION,
+                List.of());
+    }
 }

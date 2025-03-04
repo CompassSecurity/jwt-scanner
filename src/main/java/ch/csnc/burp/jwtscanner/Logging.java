@@ -14,6 +14,14 @@ public class Logging {
         this.api = api;
     }
 
+    public void logToOutput(String message) {
+        if (this.api != null) {
+            this.api.logging().logToOutput(message);
+        } else {
+            System.out.println(message);
+        }
+    }
+
     public void logToError(String message) {
         if (this.api != null) {
             this.api.logging().logToError(message);
@@ -27,6 +35,22 @@ public class Logging {
             this.api.logging().logToError(throwable);
         } else {
             throwable.printStackTrace(System.err);
+        }
+    }
+
+    public void raiseErrorEvent(String message) {
+        if (this.api != null) {
+            this.api.logging().raiseErrorEvent(message);
+        } else {
+            System.err.println(message);
+        }
+    }
+
+    public void raiseInfoEvent(String message) {
+        if (this.api != null) {
+            this.api.logging().raiseInfoEvent(message);
+        } else {
+            System.out.println(message);
         }
     }
 

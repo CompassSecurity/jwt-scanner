@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static ch.csnc.burp.jwtscanner.Base64.base64UrlDecoder;
 
@@ -18,72 +19,74 @@ public class Sign2n {
      * <li><a href="https://blog.ploetzli.ch/2018/calculating-an-rsa-public-key-from-two-signatures/">https://blog.ploetzli.ch/2018/calculating-an-rsa-public-key-from-two-signatures/</a></li>
      * </ul>
      */
-    public static List<RSAPublicKey> forgePublicKeys(Jwt jwt1, Jwt jwt2) {
-        try {
-            var alg1 = jwt1.getAlg().orElse(null);
-            var alg2 = jwt2.getAlg().orElse(null);
+    public static CompletableFuture<List<RSAPublicKey>> forgePublicKeys(Jwt jwt1, Jwt jwt2) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                var alg1 = jwt1.getAlg().orElse(null);
+                var alg2 = jwt2.getAlg().orElse(null);
 
-            if (alg1 == null || alg2 == null) {
-                return List.of();
-            }
+                if (alg1 == null || alg2 == null) {
+                    return List.of();
+                }
 
-            if (!alg1.equals(alg2)) {
-                return List.of();
-            }
+                if (!alg1.equals(alg2)) {
+                    return List.of();
+                }
 
-            if (!alg1.startsWith("RS")) {
-                return List.of();
-            }
+                if (!alg1.startsWith("RS")) {
+                    return List.of();
+                }
 
-            if (!alg1.equals("RS256")) {
-                return List.of();
-            }
+                if (!alg1.equals("RS256")) {
+                    return List.of();
+                }
 
-            var sig1Bytes = base64UrlDecoder.decode(jwt1.encodedSignature());
-            var sig2Bytes = base64UrlDecoder.decode(jwt2.encodedSignature());
+                var sig1Bytes = base64UrlDecoder.decode(jwt1.encodedSignature());
+                var sig2Bytes = base64UrlDecoder.decode(jwt2.encodedSignature());
 
-            if (sig1Bytes.length != sig2Bytes.length) {
-                return List.of();
-            }
+                if (sig1Bytes.length != sig2Bytes.length) {
+                    return List.of();
+                }
 
-            var sig1 = new BigInteger(1, sig1Bytes);
-            var sig2 = new BigInteger(1, sig2Bytes);
+                var sig1 = new BigInteger(1, sig1Bytes);
+                var sig2 = new BigInteger(1, sig2Bytes);
 
-            var input1 = "%s.%s".formatted(jwt1.encodedHeader(), jwt1.encodedPayload());
-            var input2 = "%s.%s".formatted(jwt2.encodedHeader(), jwt2.encodedPayload());
+                var input1 = "%s.%s".formatted(jwt1.encodedHeader(), jwt1.encodedPayload());
+                var input2 = "%s.%s".formatted(jwt2.encodedHeader(), jwt2.encodedPayload());
 
-            var padded1 = hashPad(sig1Bytes.length, input1.getBytes(StandardCharsets.UTF_8), "SHA-256");
-            var padded2 = hashPad(sig2Bytes.length, input2.getBytes(StandardCharsets.UTF_8), "SHA-256");
+                var padded1 = hashPad(sig1Bytes.length, input1.getBytes(StandardCharsets.UTF_8), "SHA-256");
+                var padded2 = hashPad(sig2Bytes.length, input2.getBytes(StandardCharsets.UTF_8), "SHA-256");
 
-            var m1 = new BigInteger(1, hexStringToByteArray(padded1));
-            var m2 = new BigInteger(1, hexStringToByteArray(padded2));
+                var m1 = new BigInteger(1, hexStringToByteArray(padded1));
+                var m2 = new BigInteger(1, hexStringToByteArray(padded2));
 
-            var publicKeys = new ArrayList<RSAPublicKey>();
+                var publicKeys = new ArrayList<RSAPublicKey>();
 
-            var gmp = new Gmp();
+                var gmp = new Gmp();
 
-            for (var e : List.of(3, 65537)) {
-                var nk =
-                        gmp.gcd(
-                                gmp.sub(gmp.pow(sig1.toString(), String.valueOf(e)), m1.toString()),
-                                gmp.sub(gmp.pow(sig2.toString(), String.valueOf(e)), m2.toString()));
-                // warning gcd my not return n, but n * k for small k.
-                for (var k = 1; k <= 100; k++) {
-                    var n = new BigInteger(gmp.cdiv(nk, String.valueOf(k)));
-                    if (BigInteger.ZERO.equals(n)) {
-                        break;
-                    }
-                    if (new BigInteger(gmp.powm(sig1.toString(), String.valueOf(e), n.toString())).equals(m1)) {
-                        publicKeys.add(Rsa.publicKeyOf(n, BigInteger.valueOf(e)));
+                for (var e : List.of(3, 65537)) {
+                    var nk =
+                            gmp.gcd(
+                                    gmp.sub(gmp.pow(sig1.toString(), String.valueOf(e)), m1.toString()),
+                                    gmp.sub(gmp.pow(sig2.toString(), String.valueOf(e)), m2.toString()));
+                    // warning gcd my not return n, but n * k for small k.
+                    for (var k = 1; k <= 100; k++) {
+                        var n = new BigInteger(gmp.cdiv(nk, String.valueOf(k)));
+                        if (BigInteger.ZERO.equals(n)) {
+                            break;
+                        }
+                        if (new BigInteger(gmp.powm(sig1.toString(), String.valueOf(e), n.toString())).equals(m1)) {
+                            publicKeys.add(Rsa.publicKeyOf(n, BigInteger.valueOf(e)));
+                        }
                     }
                 }
-            }
 
-            return List.copyOf(publicKeys);
-        } catch (Exception exc) {
-            JwtScannerExtension.logging().logToError(exc);
-            throw new RuntimeException(exc);
-        }
+                return List.copyOf(publicKeys);
+            } catch (Exception exc) {
+                JwtScannerExtension.logging().logToError(exc);
+                throw new RuntimeException(exc);
+            }
+        });
     }
 
     private static String hashPad(int sizeBytes, byte[] data, String hashAlgorithm) {

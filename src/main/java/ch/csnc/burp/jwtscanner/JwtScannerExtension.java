@@ -40,10 +40,10 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
         var versionTxt = "/version.txt";
         try (var stream = getClass().getResourceAsStream(versionTxt)) {
             var reader = new BufferedReader(new InputStreamReader(requireNonNull(stream, versionTxt)));
-            reader.lines().forEach(api.logging()::logToOutput);
+            reader.lines().forEach(JwtScannerExtension.logging()::logToOutput);
         } catch (Exception exc) {
-            api.logging().logToError("Could not read %s".formatted(versionTxt));
-            api.logging().logToError(exc);
+            JwtScannerExtension.logging().logToError("Could not read %s".formatted(versionTxt));
+            JwtScannerExtension.logging().logToError(exc);
         }
     }
 }
