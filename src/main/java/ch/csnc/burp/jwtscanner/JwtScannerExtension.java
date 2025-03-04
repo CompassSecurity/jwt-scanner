@@ -28,12 +28,12 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
 
     @Override
     public void initialize(MontoyaApi api) {
-        // todo remove
-        System.out.println(new Gmp().pow("2", "2"));
-
         JwtScannerExtension.api = api;
         JwtScannerExtension.logging = new Logging(api);
         JwtScannerExtension.storage = new Storage();
+
+        // todo remove
+        JwtScannerExtension.logging().logToOutput(new Gmp().pow("6", "2"));
 
         api.extension().setName("JWT Scanner");
         api.userInterface().registerContextMenuItemsProvider(new ContextMenu());
