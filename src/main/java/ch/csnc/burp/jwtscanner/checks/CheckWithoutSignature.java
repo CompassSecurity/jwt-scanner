@@ -16,7 +16,7 @@ public class CheckWithoutSignature extends Check {
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return perform(baseRequestResponse, auditInsertionPoint, jwt.withRemovedSignature(), JwtAuditIssues::withoutSignature);
+        return perform(baseRequestResponse, auditInsertionPoint, "without signature", jwt.withRemovedSignature(), JwtAuditIssues::withoutSignature);
     }
 
 }

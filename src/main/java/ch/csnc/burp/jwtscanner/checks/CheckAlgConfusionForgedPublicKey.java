@@ -27,7 +27,7 @@ public class CheckAlgConfusionForgedPublicKey extends Check {
                 .map(secret -> Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("alg", "HS256").withHS256Signature(secret).build())
                 .toList();
         for (var jwt : jwts) {
-            var auditIssue = perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion);
+            var auditIssue = perform(baseRequestResponse, auditInsertionPoint, "alg confusion (forged key)", jwt, JwtAuditIssues::algConfusion);
             if (auditIssue.isPresent()) {
                 return auditIssue;
             }

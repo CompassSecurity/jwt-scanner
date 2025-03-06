@@ -1,6 +1,10 @@
 package ch.csnc.burp.jwtscanner;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.proxy.http.InterceptedRequest;
+import burp.api.montoya.proxy.http.ProxyRequestHandler;
+import burp.api.montoya.proxy.http.ProxyRequestReceivedAction;
+import burp.api.montoya.proxy.http.ProxyRequestToBeSentAction;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -35,6 +39,7 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
         api.userInterface().registerContextMenuItemsProvider(new ContextMenu());
         api.scanner().registerInsertionPointProvider(new JwtInsertionPointProvider());
         api.scanner().registerScanCheck(new JwtScanCheck());
+        api.http().registerHttpHandler(new CommentHttpHandler());
 
         var versionTxt = "/version.txt";
         try (var stream = getClass().getResourceAsStream(versionTxt)) {

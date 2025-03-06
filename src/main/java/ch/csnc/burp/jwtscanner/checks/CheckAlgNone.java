@@ -17,7 +17,7 @@ public class CheckAlgNone extends Check {
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         for (var jwtWithAlgNone : jwt.withAlgNone()) {
-            var auditIssue = perform(baseRequestResponse, auditInsertionPoint, jwtWithAlgNone, JwtAuditIssues::algNone);
+            var auditIssue = perform(baseRequestResponse, auditInsertionPoint, "alg %s".formatted(jwtWithAlgNone.getAlg().orElse("")), jwtWithAlgNone, JwtAuditIssues::algNone);
             if (auditIssue.isPresent()) {
                 return auditIssue;
             }

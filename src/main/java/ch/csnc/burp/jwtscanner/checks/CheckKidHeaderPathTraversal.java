@@ -16,7 +16,7 @@ public class CheckKidHeaderPathTraversal extends Check {
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue()).withKidPointingToDevNull();
-        return perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::kidHeaderPathTraversal);
+        return perform(baseRequestResponse, auditInsertionPoint, "kid path traversal", jwt, JwtAuditIssues::kidHeaderPathTraversal);
     }
 
 }

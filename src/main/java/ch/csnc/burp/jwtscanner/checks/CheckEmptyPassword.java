@@ -16,7 +16,7 @@ public class CheckEmptyPassword extends Check {
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return perform(baseRequestResponse, auditInsertionPoint, jwt.withEmptyPassword(), JwtAuditIssues::emptyPassword);
+        return perform(baseRequestResponse, auditInsertionPoint, "empty password", jwt.withEmptyPassword(), JwtAuditIssues::emptyPassword);
     }
 
 }

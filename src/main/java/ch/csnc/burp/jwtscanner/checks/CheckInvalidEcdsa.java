@@ -16,7 +16,7 @@ public class CheckInvalidEcdsa extends Check {
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return perform(baseRequestResponse, auditInsertionPoint, jwt.withInvalidEcdsa(), JwtAuditIssues::invalidEcdsa);
+        return perform(baseRequestResponse, auditInsertionPoint, "CVE-2022-21449", jwt.withInvalidEcdsa(), JwtAuditIssues::invalidEcdsa);
     }
 
 }

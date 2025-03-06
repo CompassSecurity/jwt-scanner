@@ -25,7 +25,7 @@ public class CheckAlgConfusionExposedPublicKey extends Check {
                 .map(JwtScannerExtension.storage()::putPublicKeyForAlgConfusion)
                 .map(Rsa::publicKeyToPem)
                 .map(secret -> Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("alg", "HS256").withHS256Signature(secret).build())
-                .flatMap(jwt -> perform(baseRequestResponse, auditInsertionPoint, jwt, JwtAuditIssues::algConfusion));
+                .flatMap(jwt -> perform(baseRequestResponse, auditInsertionPoint, "alg confusion (exposed key)", jwt, JwtAuditIssues::algConfusion));
     }
 
 }

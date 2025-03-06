@@ -16,7 +16,7 @@ public class CheckInvalidSignature extends Check {
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
-        return perform(baseRequestResponse, auditInsertionPoint, jwt.withWrongSignature(), JwtAuditIssues::invalidSignature);
+        return perform(baseRequestResponse, auditInsertionPoint, "invalid signature", jwt.withWrongSignature(), JwtAuditIssues::invalidSignature);
     }
 
 }

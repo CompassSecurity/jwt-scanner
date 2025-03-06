@@ -1,16 +1,17 @@
 package ch.csnc.burp.jwtscanner.checks;
 
+import burp.api.montoya.core.HighlightColor;
 import burp.api.montoya.core.Marker;
+import burp.api.montoya.http.RequestOptions;
+import burp.api.montoya.http.handler.HttpRequestToBeSent;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.scanner.audit.insertionpoint.AuditInsertionPoint;
 import burp.api.montoya.scanner.audit.issues.AuditIssue;
 import burp.api.montoya.scanner.audit.issues.AuditIssueConfidence;
-import ch.csnc.burp.jwtscanner.CosineSimilarity;
-import ch.csnc.burp.jwtscanner.Jwt;
-import ch.csnc.burp.jwtscanner.JwtAuditIssues;
+import ch.csnc.burp.jwtscanner.*;
 import ch.csnc.burp.jwtscanner.JwtAuditIssues.JwtAuditIssue;
-import ch.csnc.burp.jwtscanner.JwtScannerExtension;
 
+import java.awt.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +25,9 @@ public abstract class Check {
 
     public abstract Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
 
-    protected Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Jwt jwt, JwtAuditIssue jwtAuditIssue) {
+    protected Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, String comment, Jwt jwt, JwtAuditIssue jwtAuditIssue) {
         var payload = byteArray(jwt.encode());
-        var checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService());
+        var checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(payload).withService(baseRequestResponse.httpService()).withHeader(CommentHttpHandler.COMMENT_HEADER, comment);
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
         var similarity = cosineSimilarityOf(baseRequestResponse, checkRequestResponse);
         var markers = markersOf(baseRequestResponse, auditInsertionPoint);
