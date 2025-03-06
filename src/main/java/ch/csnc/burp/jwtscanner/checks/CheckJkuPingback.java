@@ -25,8 +25,12 @@ public class CheckJkuPingback extends Check {
         var checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(ByteArray.byteArray(jwt.encode())).withService(baseRequestResponse.httpService());
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
         executor.schedule(() -> {
+            // Check later whether there was any interaction with the collaborator.
+            // If so then create an issue.
             if (!collaborator.getAllInteractions().isEmpty()) {
-                JwtScannerExtension.api().siteMap().add(JwtAuditIssues.jkuPingback(jwt, AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse));
+                var markers = markersOf(baseRequestResponse, auditInsertionPoint);
+                var auditIssue = JwtAuditIssues.jkuPingback(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers), checkRequestResponse);
+                JwtScannerExtension.api().siteMap().add(auditIssue);
             }
         }, 30, TimeUnit.SECONDS);
         return Optional.empty();

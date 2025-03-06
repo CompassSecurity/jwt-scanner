@@ -14,6 +14,7 @@ import java.util.Optional;
  */
 public class CheckJwtHasExpiry extends Check {
 
+
     @Override
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
@@ -22,7 +23,6 @@ public class CheckJwtHasExpiry extends Check {
             var auditIssue = JwtAuditIssues.noExpiry(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));
             return Optional.of(auditIssue);
         }
-        // TODO schedule for expiry
         return Optional.empty();
     }
 

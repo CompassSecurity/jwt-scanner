@@ -89,6 +89,11 @@ public class Jwt {
         return false;
     }
 
+    public Optional<BigDecimal> getExp() {
+        var exp = (BigDecimal) this.payload.get("exp");
+        return Optional.ofNullable(exp);
+    }
+
     public Optional<String> getAlg() {
         var obj = this.header.get("alg");
         if (obj == null) {
