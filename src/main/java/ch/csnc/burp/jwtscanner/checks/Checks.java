@@ -12,18 +12,13 @@ import java.util.function.Consumer;
  */
 public abstract class Checks {
 
+    // TODO add check for jku ping back
     public static void performAll(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Consumer<AuditIssue> auditIssueConsumer) {
         new CheckJwtExists().perform(baseRequestResponse, auditInsertionPoint).ifPresent(jwtExistsIssue -> {
             auditIssueConsumer.accept(jwtExistsIssue);
             // Further checks only make sense if the JWT exists.
             new CheckAlg().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            new CheckJwks().perform(baseRequestResponse, auditInsertionPoint).ifPresentOrElse(jwksDetectedIssue -> {
-                auditIssueConsumer.accept(jwksDetectedIssue);
-                new CheckAlgConfusionExposedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            }, () -> {
-                // If no public key is exposed, it should be checked whether a forged public key can be used.
-                new CheckAlgConfusionForgedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
-            });
+            new CheckJwtHasExpiry().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckJwtExpired().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckExpiredJwtAccepted().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
             new CheckWithoutSignature().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
@@ -36,7 +31,15 @@ public abstract class Checks {
                 new CheckKidHeaderPathTraversal().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckInvalidEcdsa().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckJwkHeaderInjection().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJkuPingback().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
                 new CheckJkuHeaderInjection().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                new CheckJwks().perform(baseRequestResponse, auditInsertionPoint).ifPresentOrElse(jwksDetectedIssue -> {
+                    auditIssueConsumer.accept(jwksDetectedIssue);
+                    new CheckAlgConfusionExposedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                }, () -> {
+                    // If no public key is exposed, it should be checked whether a forged public key can be used.
+                    new CheckAlgConfusionForgedPublicKey().perform(baseRequestResponse, auditInsertionPoint).ifPresent(auditIssueConsumer);
+                });
             });
         });
     }

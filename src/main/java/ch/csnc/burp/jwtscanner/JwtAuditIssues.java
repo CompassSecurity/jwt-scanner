@@ -334,6 +334,19 @@ public abstract class JwtAuditIssues {
                 listOf(baseRequestResponse, checkRequestResponses));
     }
 
+    public static AuditIssue jkuPingback(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
+        return auditIssue("JWT jku pingback",
+                "If the \"jku\" points to an untrusted or compromised source, an attacker could potentially provide a malicious key, allowing them to forge valid tokens and gain unauthorized access to sensitive resources.",
+                "Ensure that the \"jku\" URL points to a trusted and secure source, implement strict validation of the keys retrieved",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                confidence,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
+                listOf(baseRequestResponse, checkRequestResponses));
+    }
+
     public static AuditIssue jkuHeaderInjection(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT jku header injection",
                 "JWT JKU header injection is a vulnerability where an attacker can manipulate the jku (JSON Web Key Set URL) header to point to a malicious key set, enabling them to forge or alter JWTs.",
