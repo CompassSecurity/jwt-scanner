@@ -240,12 +240,12 @@ public class Jwt {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Jwt jwt = (Jwt) o;
-        return Objects.equals(header, jwt.header) && Objects.equals(payload, jwt.payload) && Objects.equals(signature, jwt.signature);
+        return this.encode().equals(jwt.encode());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(header, payload, signature);
+        return Objects.hash(this.encode());
     }
 
     @Override

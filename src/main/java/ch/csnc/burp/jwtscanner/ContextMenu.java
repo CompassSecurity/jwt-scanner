@@ -42,28 +42,30 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
             if (request1MatchResults.size() == 1 && request2MatchResults.size() == 1) {
                 var jwt1 = new Jwt(request1MatchResults.getFirst().group());
                 var jwt2 = new Jwt(request2MatchResults.getFirst().group());
-                var forgePublicKeyMenuItem = new JMenuItem("Forge public key");
-                forgePublicKeyMenuItem.addActionListener(actionEvent -> {
-                    JwtScannerExtension.logging().raiseInfoEvent("started forging public keys.");
-                    Sign2n.forgePublicKeys(jwt1, jwt2)
-                            .thenAccept(publicKeys -> {
-                                JwtScannerExtension.storage().putForgedPublicKeys(publicKeys);
-                                if (!publicKeys.isEmpty()) {
+                if (!jwt1.equals(jwt2)) {
+                    var forgePublicKeyMenuItem = new JMenuItem("Forge public key");
+                    forgePublicKeyMenuItem.addActionListener(actionEvent -> {
+                        JwtScannerExtension.logging().raiseInfoEvent("started forging public keys.");
+                        Sign2n.forgePublicKeys(jwt1, jwt2)
+                                .thenAccept(publicKeys -> {
                                     JwtScannerExtension.storage().putForgedPublicKeys(publicKeys);
-                                    siteMap.add(JwtAuditIssues.forgedPublicKeys(menuEvent.selectedRequestResponses().getFirst(), jwt1, jwt2, publicKeys));
-                                    JwtScannerExtension.logging().raiseInfoEvent("forging public keys was successful.");
-                                } else {
-                                    JwtScannerExtension.logging().raiseInfoEvent("no public keys could be forged.");
-                                }
-                            })
-                            .orTimeout(5, TimeUnit.MINUTES)
-                            .exceptionally(exc -> {
-                                JwtScannerExtension.logging().raiseErrorEvent("forging public keys failed.");
-                                JwtScannerExtension.logging().logToError(exc);
-                                return null;
-                            });
-                });
-                menuItems.add(forgePublicKeyMenuItem);
+                                    if (!publicKeys.isEmpty()) {
+                                        JwtScannerExtension.storage().putForgedPublicKeys(publicKeys);
+                                        siteMap.add(JwtAuditIssues.forgedPublicKeys(menuEvent.selectedRequestResponses().getFirst(), jwt1, jwt2, publicKeys));
+                                        JwtScannerExtension.logging().raiseInfoEvent("forging public keys was successful.");
+                                    } else {
+                                        JwtScannerExtension.logging().raiseInfoEvent("no public keys could be forged.");
+                                    }
+                                })
+                                .orTimeout(5, TimeUnit.MINUTES)
+                                .exceptionally(exc -> {
+                                    JwtScannerExtension.logging().raiseErrorEvent("forging public keys failed.");
+                                    JwtScannerExtension.logging().logToError(exc);
+                                    return null;
+                                });
+                    });
+                    menuItems.add(forgePublicKeyMenuItem);
+                }
             }
         }
 
