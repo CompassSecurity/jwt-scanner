@@ -1,5 +1,6 @@
 package ch.csnc.burp.jwtscanner;
 
+import java.security.KeyPair;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,7 @@ public class Storage {
     private Jwk jwk;
     private List<RSAPublicKey> forgedPublicKeys;
     private RSAPublicKey publicKeyForAlgConfusion;
+    private KeyPair generatedKeyPair;
 
     public Jwk putJwk(Jwk jwk) {
         this.jwk = jwk;
@@ -41,6 +43,15 @@ public class Storage {
 
     public Optional<RSAPublicKey> getPublicKeyForAlgConfusion() {
         return Optional.ofNullable(this.publicKeyForAlgConfusion);
+    }
+
+    public KeyPair putGeneratedKeyPair(KeyPair generatedKeyPair) {
+        this.generatedKeyPair = generatedKeyPair;
+        return generatedKeyPair;
+    }
+
+    public Optional<KeyPair> getGeneratedKeyPair() {
+        return Optional.ofNullable(this.generatedKeyPair);
     }
 
 }

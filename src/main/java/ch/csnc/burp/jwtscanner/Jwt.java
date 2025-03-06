@@ -205,7 +205,7 @@ public class Jwt {
     }
 
     public Jwt withInjectedJwkSelfSigned() {
-        var keyPair = Rsa.generateKeyPair();
+        var keyPair = Rsa.getOrGenerateKeyPair();
         var publicKey = (RSAPublicKey) keyPair.getPublic();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, publicKey);
@@ -218,7 +218,7 @@ public class Jwt {
     }
 
     public Jwt withInjectedJkuSelfSigned() {
-        var keyPair = Rsa.generateKeyPair();
+        var keyPair = Rsa.getOrGenerateKeyPair();
         var publicKey = (RSAPublicKey) keyPair.getPublic();
         var kid = UUID.randomUUID().toString();
         var jwk = new Jwk(kid, publicKey);

@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 
 import static java.util.Objects.requireNonNull;
 
-// TODO test on community edition
 public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
 
     private static MontoyaApi api;
@@ -31,9 +30,6 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
         JwtScannerExtension.api = api;
         JwtScannerExtension.logging = new Logging(api);
         JwtScannerExtension.storage = new Storage();
-
-        // todo remove
-        JwtScannerExtension.logging().logToOutput(new Gmp().pow("6", "2"));
 
         api.extension().setName("JWT Scanner");
         api.userInterface().registerContextMenuItemsProvider(new ContextMenu());

@@ -52,7 +52,7 @@ public abstract class JwtAuditIssues {
         var alg = jwt.getAlg();
         return auditIssue(
                 "JWT is signed asymmetrically",
-                "alg: %s".formatted(alg),
+                "alg: %s".formatted(alg.orElseThrow()),
                 "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
@@ -229,7 +229,7 @@ public abstract class JwtAuditIssues {
                             Secret:<br>
                             <pre>%s</pre>
                         </p>""".formatted(jwt.getAlg().orElseThrow(), JwtScannerExtension.storage().getPublicKeyForAlgConfusion().map(Rsa::publicKeyToPem).orElseThrow()),
-                "", // todo
+                "A JWT key confusion attack occurs when an attacker exploits a system's acceptance of multiple signing algorithms, allowing them to forge tokens by using an unexpected algorithm. To remediate this, strictly validate the expected signing algorithm, use a whitelist of acceptable algorithms, and prefer asymmetric signing methods to enhance security.",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
                 confidence,

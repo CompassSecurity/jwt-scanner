@@ -12,11 +12,17 @@ import static ch.csnc.burp.jwtscanner.Base64.base64EncoderWithPadding;
 
 public abstract class Rsa {
 
-    public static KeyPair generateKeyPair() {
+    public static KeyPair getOrGenerateKeyPair() {
         try {
+            var keyPair = JwtScannerExtension.storage().getGeneratedKeyPair().orElse(null);
+            if (keyPair != null) {
+                return keyPair;
+            }
             var keyPairGen = KeyPairGenerator.getInstance("RSA");
             keyPairGen.initialize(2048);
-            return keyPairGen.generateKeyPair();
+            keyPair = keyPairGen.generateKeyPair();
+            JwtScannerExtension.storage().putGeneratedKeyPair(keyPair);
+            return keyPair;
         } catch (Exception exc) {
             JwtScannerExtension.logging().logToError(exc);
             throw new RuntimeException(exc);

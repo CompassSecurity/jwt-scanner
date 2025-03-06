@@ -30,11 +30,9 @@ public abstract class Check {
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
         var similarity = cosineSimilarityOf(baseRequestResponse, checkRequestResponse);
         var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-        if (baseRequestResponse.response().statusCode() == checkRequestResponse.response().statusCode()) {
-            if (similarity.doubleValue() > SIMILARITY_THRESHOLD) {
-                var auditIssue = jwtAuditIssue.get(jwt, AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse.withRequestMarkers(markers));
-                return Optional.of(auditIssue);
-            }
+        if (baseRequestResponse.response().statusCode() == checkRequestResponse.response().statusCode() && similarity.doubleValue() > SIMILARITY_THRESHOLD) {
+            var auditIssue = jwtAuditIssue.get(jwt, AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse.withRequestMarkers(markers));
+            return Optional.of(auditIssue);
         } else if (checkRequestResponse.response().statusCode() == 500 && !checkRequestResponse.response().bodyToString().isBlank()) {
             // Server responded with 500 - Internal Server Error.
             // It might be worthwhile to have a more closer look at it.
