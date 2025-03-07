@@ -1,5 +1,8 @@
 .DS_Store
+.classpath
 .gradle
 .idea
+.project
+.settings
 build
 version.txt

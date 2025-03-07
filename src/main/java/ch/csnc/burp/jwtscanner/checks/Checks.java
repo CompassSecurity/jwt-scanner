@@ -12,7 +12,6 @@ import java.util.function.Consumer;
  */
 public abstract class Checks {
 
-    // TODO add check for jku ping back
     public static void performAll(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, Consumer<AuditIssue> auditIssueConsumer) {
         new CheckJwtExists().perform(baseRequestResponse, auditInsertionPoint).ifPresent(jwtExistsIssue -> {
             auditIssueConsumer.accept(jwtExistsIssue);
