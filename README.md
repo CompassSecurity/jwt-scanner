@@ -1,23 +1,41 @@
 # JWT-scanner - Burp Extension
 
 ## Description
-JWT Scanner is a Burp Suite extension for automated testing of JSON Web Token (JWT) implementations of web applications. 
-
-### Checks
-- Signature presence
-- Invalid signatures
-- Signatures with empty passwords
-- Usage of algorithm none variations
-- Invalid ECDSA parameters (CVE-2022-21449)
-- Jwk header injection
-- Jku header injection
-- Kid header path traversal
-- Algorithm confusion
+JWT Scanner is a Burp Suite extension designed for the automated testing of JSON Web Token (JWT) implementations in web applications.
 
 ## Features
-- Select base request and autodetection of JWT
-- Manually select target JWT in source request
-- Select two base request with different JWTs and try forging the public key
+- Automatically detects JWTs in the selected base request.
+- Allows manual selection of the target JWT in the base request.
+- Enables the selection of two base requests with different JWTs to attempt forging the public key.
+
+### Checks
+- Determines whether the algorithm is symmetric, asymmetric, or unknown. If symmetric, brute-forcing may be attempted.
+- Checks if the JWT has an expiry. If it does not, an alert is generated. If it has expired, the scanner checks if
+  it is still accepted; if so, an alert is generated. If not, an issue is raised since further checks may not work.
+  It is advised not to select an already expired JWT. If the JWT has not yet expired, a future check will be scheduled
+  to verify if the JWT is still accepted once the expiry is reached. If it is accepted, the appropriate alert will be
+  displayed.
+- Checks and alerts if the JWT is accepted without a signature.
+- Checks and alerts if the JWT is accepted with an invalid signature.
+- Checks and alerts if the JWT is accepted when signed symmetrically with an empty password.
+- Checks and alerts if the JWT is accepted with variations of the "none" algorithm (e.g., none, NONE, NoNE, etc.).
+- Checks and alerts if JWT verification is vulnerable to CVE-2022-21449.
+- Checks and alerts if the JWT is accepted with an injected JWK header containing a self-generated public key.
+- Checks and alerts if the server calls the URL in the JKU header (JKU pingback).
+- Checks and alerts if the JWT is accepted with an injected JKU header pointing to a custom host that hosts a self-generated public key.
+- Checks and alerts if the JWT is accepted when the KID header points to ../../../../../../../dev/null and the JWT is 
+  signed with an empty password (KID path traversal).
+- Checks for exposed public keys via the JKU header or well-known paths.
+- Checks and alerts if the JWT is accepted when signed symmetrically with the exposed public key (algorithm confusion).
+- Checks and alerts if the JWT is accepted when signed symmetrically with a forged public key (algorithm confusion).
+- If any of the checks result in the server responding with a status code of 500 (Internal Server Error), an issue is created,
+  as it may be worthwhile to investigate this further.
+
+## Limitations
+- Brute-forcing of symmetric keys is not implemented.
+- KID path traversal is limited as it only attempts one path (../../../../../../../dev/null).
+- Forging a public key requires the gmp native library (see https://gmplib.org). Compiled binaries are only supplied for the most
+  common architectures via the JAR file (linux_64, windows_64, macos_64, macos_arm64).
 
 ## Usage
 Run an active scan or manually select a request from to check:
