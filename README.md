@@ -71,10 +71,10 @@ https://github.com/NeuraLegion/brokencrystals
 Invalid Signature              PASS
 KID SQL Injection              FAIL  note: sql-injection via kid header not implemented
 Brute Forcing Weak Secret Key  FAIL  note: brute-forcing key not implemented
-RSA to HMAC                    FAIL  note: jwk.json not in well-known path
-X5U Rogue Key                  FAIL
-X5C Rogue Key                  FAIL
-JKU Rogue Key                  FAIL  note: bug?
+RSA to HMAC                    FAIL  note: cannot craft a valid base request
+X5U Rogue Key                  FAIL  note: not implemented
+X5C Rogue Key                  FAIL  note: not implemented
+JKU Rogue Key                  FAIL  note: jku pointing to a "JWK" not "JWK Set" (https://github.com/NeuraLegion/brokencrystals/issues/511)
 JWK Rogue Key                  PASS
 ```
 
