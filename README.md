@@ -35,7 +35,48 @@ JWT Scanner is a Burp Suite extension designed for the automated testing of JSON
 - Brute-forcing of symmetric keys is not implemented.
 - KID path traversal is limited as it only attempts one path (../../../../../../../dev/null).
 - Forging a public key requires the gmp native library (see https://gmplib.org). Compiled binaries are only supplied for the most
-  common architectures via the JAR file (linux_64, windows_64, macos_64, macos_arm64).
+  common architectures via the JAR file (linux\_64, windows\_64, macos\_64, macos\_arm64).
+
+## Benchmarks
+
+### Compass Demo
+```
+https://www.compass-demo.com/jwt_lab/
+
+Level 1:  PASS
+Level 2:  PASS
+Level 3:  PASS
+Level 4:  FAIL  note: brute-forcing key not implemented
+Level 5:  PASS
+```
+
+### Portswigger Labs
+```
+https://portswigger.net/web-security/all-labs#jwt
+
+JWT authentication bypass via unverified signature:                     PASS
+JWT authentication bypass via flawed signature verification:            PASS
+JWT authentication bypass via weak signing key:                         FAIL  note: brute-forcing key not implemented
+JWT authentication bypass via jwk header injection:                     PASS
+JWT authentication bypass via jku header injection:                     FAIL  note: the lab does not resolve external URLs
+JWT authentication bypass via kid header path traversal:                PASS
+JWT authentication bypass via algorithm confusion:                      PASS
+JWT authentication bypass via algorithm confusion with no exposed key:  PASS
+```
+
+### NeuronLegion brokencrystals
+```
+https://github.com/NeuraLegion/brokencrystals
+
+Invalid Signature              PASS
+KID SQL Injection              FAIL  note: sql-injection via kid header not implemented
+Brute Forcing Weak Secret Key  FAIL  note: brute-forcing key not implemented
+RSA to HMAC                    FAIL  note: jwk.json not in well-known path
+X5U Rogue Key                  FAIL
+X5C Rogue Key                  FAIL
+JKU Rogue Key                  FAIL  note: bug?
+JWK Rogue Key                  PASS
+```
 
 ## Usage
 Run an active scan or manually select a request from to check:
