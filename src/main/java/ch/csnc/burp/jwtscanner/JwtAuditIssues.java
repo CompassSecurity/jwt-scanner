@@ -203,7 +203,7 @@ public abstract class JwtAuditIssues {
         return auditIssue("JWT algorithm %s attack".formatted(jwt.getAlg().orElseThrow()),
                 """
                         The server accepts JWTs created with the "none" algorithm.
-                        The JWT ànoneà algorithm is a waz of creating a JWT without adding a signature.
+                        The JWT "none" algorithm is a way of creating a JWT without adding a signature.
                         This means that the token cannot be validated, making it vulnerable to tampering and manipulation.
                         An attacker can leverage this to impersonate any user""",
                 """
