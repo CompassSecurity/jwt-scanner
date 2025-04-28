@@ -8,6 +8,7 @@ import ch.csnc.burp.jwtscanner.checks.Checks;
 
 import javax.swing.*;
 import java.awt.*;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +54,12 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
                                         JwtScannerExtension.storage().putForgedPublicKeys(publicKeys);
                                         siteMap.add(JwtAuditIssues.forgedPublicKeys(menuEvent.selectedRequestResponses().getFirst(), jwt1, jwt2, publicKeys));
                                         JwtScannerExtension.logging().raiseInfoEvent("forging public keys was successful.");
+                                        // Raise an issue if modulus bit length is less than 2048 bit
+                                        for (RSAPublicKey publicKey : publicKeys) {
+                                            if (publicKey.getModulus().bitLength() < 2048) {
+                                                siteMap.add(JwtAuditIssues.forgedPublicKeyWeakModulus(menuEvent.selectedRequestResponses().getFirst(), jwt1, jwt2, publicKey));
+                                            }
+                                        }
                                     } else {
                                         JwtScannerExtension.logging().raiseInfoEvent("no public keys could be forged.");
                                     }

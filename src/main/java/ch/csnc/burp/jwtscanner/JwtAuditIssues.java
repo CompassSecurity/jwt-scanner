@@ -387,7 +387,11 @@ public abstract class JwtAuditIssues {
                         <p>
                             Forged public keys:<br>
                             <pre>%s</pre>
-                        </p>""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(Rsa::publicKeyToPem).collect(Collectors.joining("<br>"))),
+                        </p>""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(key ->  """
+                                                                                                                     %s
+                                                                                                                     modulus size = %d bit
+                                                                                                                     """.formatted(Rsa.publicKeyToPem(key), key.getModulus().bitLength()))
+                                                                                           .collect(Collectors.joining("<br>"))),
                 "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.MEDIUM,
@@ -395,6 +399,31 @@ public abstract class JwtAuditIssues {
                 null,
                 null,
                 AuditIssueSeverity.MEDIUM,
+                List.of());
+    }
+
+    public static AuditIssue forgedPublicKeyWeakModulus(HttpRequestResponse baseRequestResponse, Jwt jwt1, Jwt jwt2, RSAPublicKey publicKey) {
+        return auditIssue("Weak Public Key",
+                """
+                    <p>
+                        A public key was forged from the two JWT
+                        <pre>%s</pre>
+                        and
+                        <pre>%s</pre>
+                    </p>
+                    <br>
+                    <p>
+                        This public key has a modulus of <b>%d bits</b>.
+                        <br>It is recommended to use a modulus of at least 2048 bits.
+                    </p>
+                """.formatted(jwt1.encode(), jwt2.encode(), publicKey.getModulus().bitLength()),
+        "",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
                 List.of());
     }
 }
