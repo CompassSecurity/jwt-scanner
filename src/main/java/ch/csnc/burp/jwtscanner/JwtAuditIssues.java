@@ -377,21 +377,24 @@ public abstract class JwtAuditIssues {
         return auditIssue("JWT public key successfully forged",
                 """
                         <p>
-                            JWT 1:<br>
+                            JWT 1:
                             <pre>%s</pre>
                         </p>
                         <p>
-                            JWT 2:<br>
+                            JWT 2:
                             <pre>%s</pre>
                         </p>
                         <p>
-                            Forged public keys:<br>
+                            Forged public keys:
                             <pre>%s</pre>
-                        </p>""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(key ->  """
-                                                                                                                     %s
-                                                                                                                     modulus size = %d bit
-                                                                                                                     """.formatted(Rsa.publicKeyToPem(key), key.getModulus().bitLength()))
-                                                                                           .collect(Collectors.joining("<br>"))),
+                        </p>""".formatted(
+                        jwt1.encode(),
+                        jwt2.encode(),
+                        publicKeys.stream().map(key -> """
+                                        %s
+                                        modulus size = %d bit
+                                        """.formatted(Rsa.publicKeyToPem(key), key.getModulus().bitLength()))
+                                .collect(Collectors.joining("<br>"))),
                 "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.MEDIUM,
@@ -405,19 +408,27 @@ public abstract class JwtAuditIssues {
     public static AuditIssue forgedPublicKeyWeakModulus(HttpRequestResponse baseRequestResponse, Jwt jwt1, Jwt jwt2, RSAPublicKey publicKey) {
         return auditIssue("Weak Public Key",
                 """
-                    <p>
-                        A public key was forged from the two JWT
-                        <pre>%s</pre>
-                        and
-                        <pre>%s</pre>
-                    </p>
-                    <br>
-                    <p>
-                        This public key has a modulus of <b>%d bits</b>.
-                        <br>It is recommended to use a modulus of at least 2048 bits.
-                    </p>
-                """.formatted(jwt1.encode(), jwt2.encode(), publicKey.getModulus().bitLength()),
-        "",
+                            <p>
+                                The following public key was forged from the two JWTs.
+                            </p>
+                            <p>
+                                JWT 1:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                JWT 2:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                Forged public key:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                This public key has a modulus of <b>%d bits</b>.<br>
+                                It is recommended to use a modulus of at least 2048 bits.
+                            </p>
+                        """.formatted(jwt1.encode(), jwt2.encode(), Rsa.publicKeyToPem(publicKey), publicKey.getModulus().bitLength()),
+                "",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
                 AuditIssueConfidence.FIRM,

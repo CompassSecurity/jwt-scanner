@@ -6,8 +6,8 @@ import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
 import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
 import ch.csnc.burp.jwtscanner.checks.Checks;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JMenuItem;
+import java.awt.Component;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
