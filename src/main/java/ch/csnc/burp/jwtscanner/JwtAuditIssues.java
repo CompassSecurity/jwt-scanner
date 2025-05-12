@@ -38,7 +38,7 @@ public abstract class JwtAuditIssues {
                           Try to crack it:
                           <pre>hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list</pre>
                         </p>""".formatted(alg),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -53,7 +53,7 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JWT is signed asymmetrically",
                 "alg: %s".formatted(alg.orElseThrow()),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -68,7 +68,7 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JWT has unknown algorithm",
                 "alg: %s".formatted(alg),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.HIGH,
                 confidence,
@@ -81,8 +81,8 @@ public abstract class JwtAuditIssues {
     public static AuditIssue jwtDetected(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue(
                 "JWT detected",
-                "",
-                "",
+                "N/A",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -97,7 +97,7 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JSON Web Key in header detected",
                 "jwk: %s".formatted(jwt.getJwk().orElseThrow()),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -111,7 +111,7 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JSON Web Key Sets detected",
                 "jku: %s".formatted(jwt.getJku().orElseThrow()),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -125,7 +125,7 @@ public abstract class JwtAuditIssues {
         return auditIssue(
                 "JSON Web Key Sets detected",
                 checkRequestResponses[0].request().url(),
-                "",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -137,8 +137,8 @@ public abstract class JwtAuditIssues {
 
     public static AuditIssue expired(Jwt jwt, AuditIssueConfidence confidence, HttpRequestResponse baseRequestResponse, HttpRequestResponse... checkRequestResponses) {
         return auditIssue("JWT expired",
-                "",
-                "",
+                "N/A",
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.INFORMATION,
                 confidence,
@@ -377,24 +377,64 @@ public abstract class JwtAuditIssues {
         return auditIssue("JWT public key successfully forged",
                 """
                         <p>
-                            JWT 1:<br>
+                            JWT 1:
                             <pre>%s</pre>
                         </p>
                         <p>
-                            JWT 2:<br>
+                            JWT 2:
                             <pre>%s</pre>
                         </p>
-                        <p>
-                            Forged public keys:<br>
-                            <pre>%s</pre>
-                        </p>""".formatted(jwt1.encode(), jwt2.encode(), publicKeys.stream().map(Rsa::publicKeyToPem).collect(Collectors.joining("<br>"))),
-                "",
+                        %s""".formatted(
+                        jwt1.encode(),
+                        jwt2.encode(),
+                        publicKeys.stream()
+                                .map((key) -> """
+                                        <p>
+                                            Forged public key:
+                                            <pre>%s</pre>
+                                            modulus size = %d bit
+                                        </p>
+                                        """.formatted(Rsa.publicKeyToPem(key), key.getModulus().bitLength()))
+                                .collect(Collectors.joining("\n"))),
+                "N/A",
                 baseRequestResponse.request().url(),
                 AuditIssueSeverity.MEDIUM,
                 AuditIssueConfidence.FIRM,
                 null,
                 null,
                 AuditIssueSeverity.MEDIUM,
+                List.of());
+    }
+
+    public static AuditIssue forgedPublicKeyWeakModulus(HttpRequestResponse baseRequestResponse, Jwt jwt1, Jwt jwt2, RSAPublicKey publicKey) {
+        return auditIssue("Weak Public Key",
+                """
+                            <p>
+                                The following public key was forged from the two JWTs.
+                            </p>
+                            <p>
+                                JWT 1:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                JWT 2:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                Forged public key:
+                                <pre>%s</pre>
+                            </p>
+                            <p>
+                                This public key has a modulus of <b>%d bits</b>.
+                            </p>
+                        """.formatted(jwt1.encode(), jwt2.encode(), Rsa.publicKeyToPem(publicKey), publicKey.getModulus().bitLength()),
+                "It is recommended to use a modulus of at least 2048 bits.",
+                baseRequestResponse.request().url(),
+                AuditIssueSeverity.HIGH,
+                AuditIssueConfidence.FIRM,
+                null,
+                null,
+                AuditIssueSeverity.HIGH,
                 List.of());
     }
 }
