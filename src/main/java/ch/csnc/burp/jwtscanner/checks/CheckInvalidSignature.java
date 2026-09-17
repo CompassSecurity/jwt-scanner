@@ -14,7 +14,7 @@ import java.util.Optional;
 public class CheckInvalidSignature extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         return perform(baseRequestResponse, auditInsertionPoint, "invalid signature", jwt.withWrongSignature(), JwtAuditIssues::invalidSignature);
     }

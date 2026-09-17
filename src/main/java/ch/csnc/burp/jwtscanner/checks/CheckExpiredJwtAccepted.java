@@ -17,7 +17,7 @@ public class CheckExpiredJwtAccepted extends Check {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         if (jwt.isExpired()) {
             return perform(baseRequestResponse, auditInsertionPoint, "expired jwt", jwt, JwtAuditIssues::expiredAccepted);

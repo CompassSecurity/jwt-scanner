@@ -19,7 +19,7 @@ import java.util.Optional;
 public class CheckAlgConfusionForgedPublicKey extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwts = JwtScannerExtension.storage().getForgedPublicKeys()
                 .stream()
                 .map(JwtScannerExtension.storage()::putPublicKeyForAlgConfusion)

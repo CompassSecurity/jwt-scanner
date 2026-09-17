@@ -17,7 +17,7 @@ import java.util.Optional;
 public class CheckJwtExists extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         var markers = markersOf(baseRequestResponse, auditInsertionPoint);
         var auditIssue = JwtAuditIssues.jwtDetected(jwt, AuditIssueConfidence.FIRM, baseRequestResponse.withRequestMarkers(markers));

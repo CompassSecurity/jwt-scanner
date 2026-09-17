@@ -14,7 +14,7 @@ import java.util.Optional;
 public class CheckAlgNone extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         for (var jwtWithAlgNone : jwt.withAlgNone()) {
             var auditIssue = perform(baseRequestResponse, auditInsertionPoint, "alg %s".formatted(jwtWithAlgNone.getAlg().orElse("")), jwtWithAlgNone, JwtAuditIssues::algNone);

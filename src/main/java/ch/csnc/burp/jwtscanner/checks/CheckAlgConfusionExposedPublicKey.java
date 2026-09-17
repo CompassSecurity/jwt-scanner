@@ -19,7 +19,7 @@ import java.util.Optional;
 public class CheckAlgConfusionExposedPublicKey extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         return JwtScannerExtension.storage().getJwk()
                 .map(Rsa::publicKeyOf)
                 .map(JwtScannerExtension.storage()::putPublicKeyForAlgConfusion)

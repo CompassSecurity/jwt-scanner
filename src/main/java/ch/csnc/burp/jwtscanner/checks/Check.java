@@ -25,7 +25,23 @@ public abstract class Check {
 
     protected static final double SIMILARITY_THRESHOLD = 0.8;
 
-    public abstract Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
+    /**
+     * Runs this check, catching and logging any exception it throws so that a failure here (for example, a
+     * network error or an unexpected response) never takes down a caller that is running several checks in a
+     * row, or a caller that invoked this method later on, detached from the original scan (such as a scheduled
+     * recheck).
+     */
+    public final Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+        try {
+            return doPerform(baseRequestResponse, auditInsertionPoint);
+        } catch (Exception exc) {
+            JwtScannerExtension.logging().logToError("%s failed with an exception and was skipped:".formatted(getClass().getSimpleName()));
+            JwtScannerExtension.logging().logToError(exc);
+            return Optional.empty();
+        }
+    }
+
+    protected abstract Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint);
 
     protected Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint, String comment, Jwt jwt, JwtAuditIssue jwtAuditIssue) {
         var payload = byteArray(jwt.encode());

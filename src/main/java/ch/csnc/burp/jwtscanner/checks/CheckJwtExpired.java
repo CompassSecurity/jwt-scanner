@@ -15,7 +15,7 @@ import java.util.Optional;
 public class CheckJwtExpired extends Check {
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var jwt = new Jwt(auditInsertionPoint.baseValue());
         if (jwt.isExpired()) {
             var markers = markersOf(baseRequestResponse, auditInsertionPoint);

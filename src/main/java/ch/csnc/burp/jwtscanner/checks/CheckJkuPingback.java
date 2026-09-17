@@ -20,7 +20,7 @@ public class CheckJkuPingback extends Check {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     @Override
-    public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
+    protected Optional<AuditIssue> doPerform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var collaborator = JwtScannerExtension.api().collaborator().createClient();
         var jwt = Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("jku", "http://%s".formatted(collaborator.generatePayload().toString())).build();
         var checkRequest = buildCheckRequest(baseRequestResponse, auditInsertionPoint, ByteArray.byteArray(jwt.encode()), "jku pingback");
