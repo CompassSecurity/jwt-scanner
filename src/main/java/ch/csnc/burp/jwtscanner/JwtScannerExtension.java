@@ -1,6 +1,7 @@
 package ch.csnc.burp.jwtscanner;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.scanner.scancheck.ScanCheckType;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -33,7 +34,7 @@ public class JwtScannerExtension implements burp.api.montoya.BurpExtension {
         api.extension().setName("JWT Scanner");
         api.userInterface().registerContextMenuItemsProvider(new ContextMenu());
         api.scanner().registerInsertionPointProvider(new JwtInsertionPointProvider());
-        api.scanner().registerScanCheck(new JwtScanCheck());
+        api.scanner().registerActiveScanCheck(new JwtScanCheck(), ScanCheckType.PER_INSERTION_POINT);
         api.http().registerHttpHandler(new CommentHttpHandler());
 
         var versionTxt = "/version.txt";
