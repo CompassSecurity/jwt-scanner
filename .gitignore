@@ -4,5 +4,6 @@
 .idea
 .project
 .settings
+bin
 build
 version.txt
