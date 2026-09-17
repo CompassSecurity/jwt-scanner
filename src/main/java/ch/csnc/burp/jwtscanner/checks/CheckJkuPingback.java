@@ -23,7 +23,7 @@ public class CheckJkuPingback extends Check {
     public Optional<AuditIssue> perform(HttpRequestResponse baseRequestResponse, AuditInsertionPoint auditInsertionPoint) {
         var collaborator = JwtScannerExtension.api().collaborator().createClient();
         var jwt = Jwt.newBuilder(auditInsertionPoint.baseValue()).withHeader("jku", "http://%s".formatted(collaborator.generatePayload().toString())).build();
-        var checkRequest = auditInsertionPoint.buildHttpRequestWithPayload(ByteArray.byteArray(jwt.encode())).withService(baseRequestResponse.httpService()).withHeader(CommentHttpHandler.COMMENT_HEADER, "jku pingback");
+        var checkRequest = buildCheckRequest(baseRequestResponse, auditInsertionPoint, ByteArray.byteArray(jwt.encode()), "jku pingback");
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
         executor.schedule(() -> {
             // Check later whether there was any interaction with the collaborator.
