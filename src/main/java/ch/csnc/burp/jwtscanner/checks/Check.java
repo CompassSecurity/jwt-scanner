@@ -23,8 +23,6 @@ import static burp.api.montoya.core.ByteArray.byteArray;
 
 public abstract class Check {
 
-    protected static final double SIMILARITY_THRESHOLD = 0.8;
-
     /**
      * Runs this check, catching and logging any exception it throws so that a failure here (for example, a
      * network error or an unexpected response) never takes down a caller that is running several checks in a
@@ -49,7 +47,8 @@ public abstract class Check {
         var checkRequestResponse = JwtScannerExtension.api().http().sendRequest(checkRequest);
         var similarity = cosineSimilarityOf(baseRequestResponse, checkRequestResponse);
         var markers = markersOf(baseRequestResponse, auditInsertionPoint);
-        if (baseRequestResponse.response().statusCode() == checkRequestResponse.response().statusCode() && similarity.doubleValue() > SIMILARITY_THRESHOLD) {
+        var similarityThreshold = JwtScannerExtension.settings().similarityThreshold();
+        if (baseRequestResponse.response().statusCode() == checkRequestResponse.response().statusCode() && similarity.doubleValue() > similarityThreshold) {
             var auditIssue = jwtAuditIssue.get(jwt, AuditIssueConfidence.FIRM, baseRequestResponse, checkRequestResponse.withRequestMarkers(markers));
             return Optional.of(auditIssue);
         } else if (checkRequestResponse.response().statusCode() == 500 && !checkRequestResponse.response().bodyToString().isBlank()) {
