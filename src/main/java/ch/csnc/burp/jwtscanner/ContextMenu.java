@@ -82,15 +82,19 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
                     var scanSelectedMenuItem = new JMenuItem("Scan selected");
                     scanSelectedMenuItem.addActionListener(actionEvent -> {
                         executor.execute(() -> {
-                            var requestResponse = menuEvent.messageEditorRequestResponse()
-                                    .map(MessageEditorHttpRequestResponse::requestResponse)
-                                    .orElseThrow();
-                            var auditInsertionPoint = AuditInsertionPoint.auditInsertionPoint(
-                                    "JWT detected",
-                                    requestResponse.request(),
-                                    selectionOffsets.startIndexInclusive(),
-                                    selectionOffsets.endIndexExclusive());
-                            Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
+                            try {
+                                var requestResponse = menuEvent.messageEditorRequestResponse()
+                                        .map(MessageEditorHttpRequestResponse::requestResponse)
+                                        .orElseThrow();
+                                var auditInsertionPoint = AuditInsertionPoint.auditInsertionPoint(
+                                        "JWT detected",
+                                        requestResponse.request(),
+                                        selectionOffsets.startIndexInclusive(),
+                                        selectionOffsets.endIndexExclusive());
+                                Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
+                            } catch (Exception exc) {
+                                JwtScannerExtension.logging().logToError(exc);
+                            }
                         });
                     });
                     menuItems.add(scanSelectedMenuItem);
@@ -99,16 +103,20 @@ public class ContextMenu implements burp.api.montoya.ui.contextmenu.ContextMenuI
         var scanAutodetectMenuItem = new JMenuItem("Scan (autodetect)");
         scanAutodetectMenuItem.addActionListener(actionEvent -> {
             executor.execute(() -> {
-                var insertionPointProvider = new JwtInsertionPointProvider();
-                var requestResponses = menuEvent.messageEditorRequestResponse()
-                        .map(MessageEditorHttpRequestResponse::requestResponse)
-                        .map(List::of)
-                        .orElseGet(menuEvent::selectedRequestResponses);
-                for (var requestResponse : requestResponses) {
-                    var auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
-                    for (var auditInsertionPoint : auditInsertionPoints) {
-                        Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
+                try {
+                    var insertionPointProvider = new JwtInsertionPointProvider();
+                    var requestResponses = menuEvent.messageEditorRequestResponse()
+                            .map(MessageEditorHttpRequestResponse::requestResponse)
+                            .map(List::of)
+                            .orElseGet(menuEvent::selectedRequestResponses);
+                    for (var requestResponse : requestResponses) {
+                        var auditInsertionPoints = insertionPointProvider.provideInsertionPoints(requestResponse);
+                        for (var auditInsertionPoint : auditInsertionPoints) {
+                            Checks.performAll(requestResponse, auditInsertionPoint, siteMap::add);
+                        }
                     }
+                } catch (Exception exc) {
+                    JwtScannerExtension.logging().logToError(exc);
                 }
             });
         });
