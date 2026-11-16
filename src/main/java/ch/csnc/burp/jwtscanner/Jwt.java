@@ -39,7 +39,7 @@ public class Jwt {
     private static void decode(String encodedJwt, TriConsumer<LinkedHashMap<String, Object>, LinkedHashMap<String, Object>, String> consumer) {
         var parts = encodedJwt.split("\\.", -1);
         if (parts.length != 3) {
-            throw new IllegalArgumentException("parse error: %s".formatted(encodedJwt));
+            throw new JwtParseException("parse error: %s".formatted(encodedJwt));
         }
         var headerBytes = base64UrlDecoder.decode(parts[0]);
         var payloadBytes = base64UrlDecoder.decode(parts[1]);
